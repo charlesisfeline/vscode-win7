@@ -32,8 +32,8 @@ set MSVS_VERSION="2022" &&
 set GYP_MSVS_VERSION="2022" &&
 
 # Skip checking for Node 18
-export VSCODE_SKIP_NODE_VERSION_CHECK &&
-set VSCODE_SKIP_NODE_VERSION_CHECK &&
+export VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
+set VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
 
 # Compiler flags
 export CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
@@ -44,6 +44,9 @@ set CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 set CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 set CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 set LDFLAGS="-Wl,-O3 -msse3 -s" &&
+
+# Patch package.jsons to use Node 16
+/usr/bin/find ./ \( -type d -name .git -prune -type d -name node_modules -prune \) -o -type f -name package.json -print0 | xargs -0 sed -i 's/\"\@types\/node\"\:\ \"18\.x\"/\"\@types\/node\"\:\ \"16\.x\"/g' &&
 
 # yarn install
 yarn &&
