@@ -16,18 +16,6 @@ index c7befdb5fa1..b22869e5354 100644
  ms_build_id "25612240"
  runtime "electron"
  build_from_source "true"
-diff --git a/README.md b/README.md
-index 61df8fc6bb4..cb32d825676 100644
---- a/README.md
-+++ b/README.md
-@@ -1,5 +1,7 @@
- # Visual Studio Code - Open Source ("Code - OSS")
- 
-+<small>Builds with Electron 22 restored for Windows 7/8/8.1 support</small>
-+
- [![Feature Requests](https://img.shields.io/github/issues/microsoft/vscode/feature-request.svg)](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
- [![Bugs](https://img.shields.io/github/issues/microsoft/vscode/bug.svg)](https://github.com/microsoft/vscode/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug)
- [![Gitter](https://img.shields.io/badge/chat-on%20gitter-yellow.svg)](https://gitter.im/Microsoft/vscode)
 diff --git a/build/checksums/electron.txt b/build/checksums/electron.txt
 index 4726faa51f4..2d1c9ebeb06 100644
 --- a/build/checksums/electron.txt
@@ -537,6 +525,19 @@ index 45af692342a..4f229378bd7 100644
  ms_build_id "241679"
  runtime "node"
  build_from_source "true"
+diff --git a/src/vs/base/node/shell.ts b/src/vs/base/node/shell.ts
+index 9da701ffec3..55d97ca3580 100644
+--- a/src/vs/base/node/shell.ts
++++ b/src/vs/base/node/shell.ts
+@@ -33,7 +33,7 @@ function getSystemShellUnixLike(os: platform.OperatingSystem, env: platform.IPro
+ 	}
+ 
+ 	if (!_TERMINAL_DEFAULT_SHELL_UNIX_LIKE) {
+-		let unixLikeTerminal: string | undefined;
++		let unixLikeTerminal: string | undefined | null;
+ 		if (platform.isWindows) {
+ 			unixLikeTerminal = '/bin/bash'; // for WSL
+ 		} else {
 diff --git a/src/vs/base/parts/sandbox/common/electronTypes.ts b/src/vs/base/parts/sandbox/common/electronTypes.ts
 index f8c7a35e077..d54657e0147 100644
 --- a/src/vs/base/parts/sandbox/common/electronTypes.ts
