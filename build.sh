@@ -62,7 +62,7 @@ yarn gulp compile-extensions-build &&
 yarn gulp minify-vscode &&
 
 # dist
-vscode-win32-x64-min-ci &&
+yarn gulp vscode-win32-x64-min-ci &&
 
 printf "\n" &&
 printf "${bold}${GRE}Done!${c0}\n" &&
