@@ -23,7 +23,7 @@ import { RemoteSourceAction } from './api/git-base';
 abstract class CheckoutCommandItem implements QuickPickItem {
 	abstract get label(): string;
 	get description(): string { return ''; }
-	get alwaysShow(): boolean { return true; }
+	get alwaysShow(): boolean { return false; }
 }
 
 class CreateBranchItem extends CheckoutCommandItem {
@@ -260,6 +260,14 @@ class RepositoryItem implements QuickPickItem {
 	get description(): string { return this.path; }
 
 	constructor(public readonly path: string) { }
+}
+
+class StashItem implements QuickPickItem {
+	get label(): string { return `#${this.stash.index}: ${this.stash.description}`; }
+
+	get description(): string | undefined { return this.stash.branchName; }
+
+	constructor(readonly stash: Stash) { }
 }
 
 interface ScmCommandOptions {
@@ -2953,6 +2961,16 @@ export class CommandCenter {
 		await repository.fetchAll();
 	}
 
+	@command('git.fetchRef', { repository: true })
+	async fetchRef(repository: Repository, ref: string): Promise<void> {
+		if (!repository || !ref) {
+			return;
+		}
+
+		const branch = await repository.getBranch(ref);
+		await repository.fetch({ remote: branch.remote, ref: branch.name });
+	}
+
 	@command('git.pullFrom', { repository: true })
 	async pullFrom(repository: Repository): Promise<void> {
 		const remotes = repository.remotes;
@@ -3013,6 +3031,16 @@ export class CommandCenter {
 		}
 
 		await repository.pullWithRebase(repository.HEAD);
+	}
+
+	@command('git.pullRef', { repository: true })
+	async pullRef(repository: Repository, ref: string): Promise<void> {
+		if (!repository || !ref) {
+			return;
+		}
+
+		const branch = await repository.getBranch(ref);
+		await repository.pullFrom(false, branch.remote, branch.name);
 	}
 
 	private async _push(repository: Repository, pushOptions: PushOptions) {
@@ -3150,6 +3178,15 @@ export class CommandCenter {
 	@command('git.pushWithTagsForce', { repository: true })
 	async pushFollowTagsForce(repository: Repository): Promise<void> {
 		await this._push(repository, { pushType: PushType.PushFollowTags, forcePush: true });
+	}
+
+	@command('git.pushRef', { repository: true })
+	async pushRef(repository: Repository, ref: string): Promise<void> {
+		if (!repository || !ref) {
+			return;
+		}
+
+		await this._push(repository, { pushType: PushType.Push });
 	}
 
 	@command('git.cherryPick', { repository: true })
@@ -3561,8 +3598,8 @@ export class CommandCenter {
 			return;
 		}
 
-		await result.repository.popStash(result.stash.index);
 		await commands.executeCommand('workbench.action.closeActiveEditor');
+		await result.repository.popStash(result.stash.index);
 	}
 
 	@command('git.stashApply', { repository: true })
@@ -3596,8 +3633,8 @@ export class CommandCenter {
 			return;
 		}
 
-		await result.repository.applyStash(result.stash.index);
 		await commands.executeCommand('workbench.action.closeActiveEditor');
+		await result.repository.applyStash(result.stash.index);
 	}
 
 	@command('git.stashDrop', { repository: true })
@@ -3671,36 +3708,61 @@ export class CommandCenter {
 			return;
 		}
 
-		const stashFiles = await repository.showStash(stash.index);
-
-		if (!stashFiles || stashFiles.length === 0) {
+		const stashChanges = await repository.showStash(stash.index);
+		if (!stashChanges || stashChanges.length === 0) {
 			return;
+		}
+
+		// A stash commit can have up to 3 parents:
+		// 1. The first parent is the commit that was HEAD when the stash was created.
+		// 2. The second parent is the commit that represents the index when the stash was created.
+		// 3. The third parent (when present) represents the untracked files when the stash was created.
+		const stashFirstParentCommit = stash.parents.length > 0 ? stash.parents[0] : `${stash.hash}^`;
+		const stashUntrackedFilesParentCommit = stash.parents.length === 3 ? stash.parents[2] : undefined;
+		const stashUntrackedFiles: string[] = [];
+
+		if (stashUntrackedFilesParentCommit) {
+			const untrackedFiles = await repository.getObjectFiles(stashUntrackedFilesParentCommit);
+			stashUntrackedFiles.push(...untrackedFiles.map(f => path.join(repository.root, f.file)));
 		}
 
 		const title = `Git Stash #${stash.index}: ${stash.description}`;
 		const multiDiffSourceUri = toGitUri(Uri.file(repository.root), `stash@{${stash.index}}`, { scheme: 'git-stash' });
 
-		const resources: { originalUri: Uri; modifiedUri: Uri }[] = [];
-		for (const file of stashFiles) {
-			const fileUri = Uri.file(path.join(repository.root, file));
-			resources.push({ originalUri: fileUri, modifiedUri: toGitUri(fileUri, `stash@{${stash.index}}`) });
+		const resources: { originalUri: Uri | undefined; modifiedUri: Uri | undefined }[] = [];
+		for (const change of stashChanges) {
+			const isChangeUntracked = !!stashUntrackedFiles.find(f => pathEquals(f, change.uri.fsPath));
+			const modifiedUriRef = !isChangeUntracked ? stash.hash : stashUntrackedFilesParentCommit ?? stash.hash;
+
+			switch (change.status) {
+				case Status.INDEX_ADDED:
+					resources.push({ originalUri: undefined, modifiedUri: toGitUri(change.uri, modifiedUriRef) });
+					break;
+				case Status.DELETED:
+					resources.push({ originalUri: toGitUri(change.uri, stashFirstParentCommit), modifiedUri: undefined });
+					break;
+				case Status.INDEX_RENAMED:
+					resources.push({ originalUri: toGitUri(change.originalUri, stashFirstParentCommit), modifiedUri: toGitUri(change.uri, modifiedUriRef) });
+					break;
+				default:
+					resources.push({ originalUri: toGitUri(change.uri, stashFirstParentCommit), modifiedUri: toGitUri(change.uri, modifiedUriRef) });
+					break;
+			}
 		}
 
 		commands.executeCommand('_workbench.openMultiDiffEditor', { multiDiffSourceUri, title, resources });
 	}
 
 	private async pickStash(repository: Repository, placeHolder: string): Promise<Stash | undefined> {
-		const stashes = await repository.getStashes();
+		const getStashQuickPickItems = async (): Promise<StashItem[] | QuickPickItem[]> => {
+			const stashes = await repository.getStashes();
+			return stashes.length > 0 ?
+				stashes.map(stash => new StashItem(stash)) :
+				[{ label: l10n.t('$(info) This repository has no stashes.') }];
+		};
 
-		if (stashes.length === 0) {
-			window.showInformationMessage(l10n.t('There are no stashes in the repository.'));
-			return;
-		}
-
-		const picks = stashes.map(stash => ({ label: `#${stash.index}: ${stash.description}`, description: stash.branchName, stash }));
-		const result = await window.showQuickPick(picks, { placeHolder });
-
-		return result?.stash;
+		const result = await window.showQuickPick<StashItem | QuickPickItem>(getStashQuickPickItems(), { placeHolder });
+		return result instanceof StashItem ? result.stash : undefined;
 	}
 
 	private async getStashFromUri(uri: Uri | undefined): Promise<{ repository: Repository; stash: Stash } | undefined> {
