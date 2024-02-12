@@ -1484,11 +1484,6 @@ export class Repository implements Disposable {
 
 	async getBranchBase(ref: string): Promise<Branch | undefined> {
 		const branch = await this.getBranch(ref);
-		const branchUpstream = await this.getUpstreamBranch(branch);
-
-		if (branchUpstream) {
-			return branchUpstream;
-		}
 
 		// Git config
 		const mergeBaseConfigKey = `branch.${branch.name}.vscode-merge-base`;
@@ -1650,10 +1645,6 @@ export class Repository implements Disposable {
 
 	async getCommit(ref: string): Promise<Commit> {
 		return await this.repository.getCommit(ref);
-	}
-
-	async getCommitFiles(ref: string): Promise<string[]> {
-		return await this.repository.getCommitFiles(ref);
 	}
 
 	async getCommitCount(range: string): Promise<{ ahead: number; behind: number }> {
