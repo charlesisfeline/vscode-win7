@@ -401,7 +401,7 @@ index a06baecbdeb..c943db2d3f1 100644
      "source-map": "0.6.1",
      "ternary-stream": "^3.0.0",
      "through2": "^4.0.2",
-@@ -58,6 +58,9 @@
+@@ -57,6 +57,10 @@
      "workerpool": "^6.4.0",
      "yauzl": "^2.10.0"
    },
