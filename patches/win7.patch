@@ -407,6 +407,7 @@ index a06baecbdeb..c943db2d3f1 100644
    },
 +  "resolutions": {
 +    "@azure/core-lro": "2.5.4"
++    "@azure/core-util": "1.6.1"
 +  },
    "scripts": {
      "compile": "../node_modules/.bin/tsc -p tsconfig.build.json",
