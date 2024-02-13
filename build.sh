@@ -83,11 +83,17 @@ yarn gulp compile-build &&
 yarn gulp compile-extension-media &&
 yarn gulp compile-extensions-build &&
 yarn gulp minify-vscode &&
-yarn gulp vscode-linux-x64-min-ci &&
-#yarn gulp vscode-linux-x64-build-deb
+yarn gulp vscode-linux-x64-min-ci
 }
 case $1 in
 	--linux) buildLinux; exit 0;;
+esac
+
+distLinux () {
+yarn gulp vscode-linux-x64-build-deb
+}
+case $1 in
+	--dist-linux) buildLinux; distLinux; exit 0;;
 esac
 
 buildWin () {
@@ -121,13 +127,17 @@ yarn gulp compile-build &&
 yarn gulp compile-extension-media &&
 yarn gulp compile-extensions-build &&
 yarn gulp minify-vscode &&
-yarn gulp vscode-win32-x64-min-ci &&
-#yarn gulp vscode-win32-x64-inno-updater &&
-#yarn gulp vscode-win32-x64-system-setup &&
-#yarn gulp vscode-win32-x64-user-setup
+yarn gulp vscode-win32-x64-min-ci
 }
 case $1 in
 	--win) buildWin; exit 0;;
 esac
 
-exit 0
+distWin () {
+yarn gulp vscode-win32-x64-inno-updater &&
+yarn gulp vscode-win32-x64-system-setup &&
+yarn gulp vscode-win32-x64-user-setup
+}
+case $1 in
+	--dist-win) buildWin; distWin; exit 0;;
+esac
