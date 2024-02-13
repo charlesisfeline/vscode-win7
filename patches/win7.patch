@@ -505,6 +505,15 @@ index 488e3cd2c58..6b1ff07ed95 100644
      "eslint": "8.36.0",
      "eslint-plugin-header": "3.1.1",
      "eslint-plugin-jsdoc": "^46.5.0",
+@@ -170,7 +170,7 @@
+     "gulp-gzip": "^1.4.2",
+     "gulp-json-editor": "^2.5.0",
+     "gulp-plumber": "^1.2.0",
+-    "gulp-postcss": "^9.1.0",
++    "gulp-postcss": "9.0.1",
+     "gulp-rename": "^1.2.0",
+     "gulp-replace": "^0.5.4",
+     "gulp-sourcemaps": "^3.0.0",
 @@ -199,7 +199,7 @@
      "postcss": "^8.4.33",
      "postcss-nesting": "^12.0.2",
