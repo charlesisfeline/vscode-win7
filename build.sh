@@ -70,6 +70,9 @@ export CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 export CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 export LDFLAGS="-Wl,-O3 -msse3 -s" &&
 
+# Patch for Electron 22/Node 16
+git apply --reject ./patches/win7.patch &&
+
 # Patch package.jsons to use Node 16
 /usr/bin/find ./ \( -type d -name .git -prune -type d -name node_modules -prune \) -o -type f -name package.json -print0 | xargs -0 sed -i 's/\"\@types\/node\"\:\ \"18\.x\"/\"\@types\/node\"\:\ \"16\.x\"/g' &&
 
@@ -113,6 +116,9 @@ set CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 set CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 set CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 set LDFLAGS="-Wl,-O3 -msse3 -s" &&
+
+# Patch for Electron 22/Node 16
+git apply --reject ./patches/win7.patch &&
 
 # Patch package.jsons to use Node 16
 /usr/bin/find ./ \( -type d -name .git -prune -type d -name node_modules -prune \) -o -type f -name package.json -print0 | xargs -0 sed -i 's/\"\@types\/node\"\:\ \"18\.x\"/\"\@types\/node\"\:\ \"16\.x\"/g' &&
