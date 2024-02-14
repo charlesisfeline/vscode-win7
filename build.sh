@@ -47,7 +47,9 @@ cleanCode () {
 	printf "\n" &&
 
 	rm -r -f ./.build/* &&
-	rm -r -f ./out*
+	rm -r -f ./out* &&
+	printf "\n" &&
+	printf "${bold}${GRE} Done.${c0}\n" &&
 }
 case $1 in
 	--clean) cleanCode; exit 0;;
@@ -147,3 +149,5 @@ yarn gulp vscode-win32-x64-user-setup
 case $1 in
 	--dist-win) buildWin; distWin; exit 0;;
 esac
+
+tput sgr0
