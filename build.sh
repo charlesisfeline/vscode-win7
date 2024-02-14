@@ -50,6 +50,7 @@ cleanCode () {
 	rm -r -f ./out* &&
 	printf "\n" &&
 	printf "${bold}${GRE} Done.${c0}\n" &&
+	printf "\n"
 }
 case $1 in
 	--clean) cleanCode; exit 0;;
