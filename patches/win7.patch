@@ -564,7 +564,7 @@ index 488e3cd2c58..e95d4fc1f0b 100644
 +    "@azure/core-client": "1.7.3",
 +    "@azure/core-lro": "2.5.4",
 +    "@azure/core-rest-pipeline": "1.12.2",
-+    "@azure/core-util": "1.6.1"
++    "@azure/core-util": "1.6.1",
 +    "@types/sinon": "10.0.16"
 +  },
    "repository": {
@@ -594,6 +594,36 @@ index 9da701ffec3..55d97ca3580 100644
  		if (platform.isWindows) {
  			unixLikeTerminal = '/bin/bash'; // for WSL
  		} else {
+diff --git a/src/vs/base/node/zip.ts b/src/vs/base/node/zip.ts
+index 3cb7bc9795b..88a1897cdbe 100644
+--- a/src/vs/base/node/zip.ts
++++ b/src/vs/base/node/zip.ts
+@@ -164,9 +164,9 @@ async function openZip(zipFile: string, lazy: boolean = false): Promise<ZipFile>
+ 	const { open } = await import('yauzl');
+ 
+ 	return new Promise<ZipFile>((resolve, reject) => {
+-		open(zipFile, lazy ? { lazyEntries: true } : undefined!, (error?: Error, zipfile?: ZipFile) => {
+-			if (error) {
+-				reject(toExtractError(error));
++		open(zipFile, lazy ? { lazyEntries: true } : undefined!, (err?: Error, zipfile?: ZipFile) => {
++			if (err) {
++				reject(toExtractError(err));
+ 			} else {
+ 				resolve(assertIsDefined(zipfile));
+ 			}
+@@ -176,9 +176,9 @@ async function openZip(zipFile: string, lazy: boolean = false): Promise<ZipFile>
+ 
+ function openZipStream(zipFile: ZipFile, entry: Entry): Promise<Readable> {
+ 	return new Promise<Readable>((resolve, reject) => {
+-		zipFile.openReadStream(entry, (error?: Error, stream?: Readable) => {
+-			if (error) {
+-				reject(toExtractError(error));
++		zipFile.openReadStream(entry, (err?: Error, stream?: Readable) => {
++			if (err) {
++				reject(toExtractError(err));
+ 			} else {
+ 				resolve(assertIsDefined(stream));
+ 			}
 diff --git a/src/vs/base/parts/sandbox/common/electronTypes.ts b/src/vs/base/parts/sandbox/common/electronTypes.ts
 index f8c7a35e077..d54657e0147 100644
 --- a/src/vs/base/parts/sandbox/common/electronTypes.ts
