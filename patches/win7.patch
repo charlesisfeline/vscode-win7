@@ -389,6 +389,42 @@ index 68f6989f27a..0e89508fe8e 100644
  const { typescript } = require('tree-sitter-typescript');
  const product = require('../../product.json');
  const packageJson = require('../../package.json');
+diff --git a/build/linux/debian/calculate-deps.js b/build/linux/debian/calculate-deps.js
+index 6304df9edda..1ede0702f52 100644
+--- a/build/linux/debian/calculate-deps.js
++++ b/build/linux/debian/calculate-deps.js
+@@ -79,9 +79,12 @@ function calculatePackageDeps(binaryPath, arch, chromiumSysroot, vscodeSysroot)
+     // TODO(deepak1556): remove this workaround in favor of computing the
+     // versions from build container for native modules.
+     const filteredDeps = depsStr.split(', ').filter(dependency => {
+-        return !dependency.startsWith('libgcc-s1');
++        return !dependency.startsWith('libgcc-s1') &&
++            !dependency.startsWith('libgssapi-krb5-2') &&
++            !dependency.startsWith('libkrb5-3') &&
++            !dependency.startsWith('libxkbfile1');
+     }).sort();
+     const requires = new Set(filteredDeps);
+     return requires;
+ }
+-//# sourceMappingURL=calculate-deps.js.map
+\ No newline at end of file
++//# sourceMappingURL=calculate-deps.js.map
+diff --git a/build/linux/debian/calculate-deps.ts b/build/linux/debian/calculate-deps.ts
+index 92f8065f262..f964ccfbf41 100644
+--- a/build/linux/debian/calculate-deps.ts
++++ b/build/linux/debian/calculate-deps.ts
+@@ -90,7 +90,10 @@ function calculatePackageDeps(binaryPath: string, arch: DebianArchString, chromi
+ 	// TODO(deepak1556): remove this workaround in favor of computing the
+ 	// versions from build container for native modules.
+ 	const filteredDeps = depsStr.split(', ').filter(dependency => {
+-		return !dependency.startsWith('libgcc-s1');
++        return !dependency.startsWith('libgcc-s1') &&
++            !dependency.startsWith('libgssapi-krb5-2') &&
++            !dependency.startsWith('libkrb5-3') &&
++            !dependency.startsWith('libxkbfile1');
+ 	}).sort();
+ 	const requires = new Set(filteredDeps);
+ 	return requires;
 diff --git a/build/package.json b/build/package.json
 index a06baecbdeb..c943db2d3f1 100644
 --- a/build/package.json
