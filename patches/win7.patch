@@ -704,3 +704,16 @@ index a90d28e82cf..18a1412cd10 100644
  				}, () => {
  					socket.removeListener('error', e);
  					socket.pause();
+diff --git a/src/vs/workbench/electron-sandbox/parts/dialogs/dialogHandler.ts b/src/vs/workbench/electron-sandbox/parts/dialogs/dialogHandler.ts
+index f2cc82ab8c5..d70413044be 100644
+--- a/src/vs/workbench/electron-sandbox/parts/dialogs/dialogHandler.ts
++++ b/src/vs/workbench/electron-sandbox/parts/dialogs/dialogHandler.ts
+@@ -86,7 +86,7 @@ export class NativeDialogHandler extends AbstractDialogHandler {
+ 				this.productService.commit || 'Unknown',
+ 				this.productService.date ? `${this.productService.date}${useAgo ? ' (' + fromNow(new Date(this.productService.date), true) + ')' : ''}` : 'Unknown',
+ 				process.versions['electron'],
+-				process.versions['microsoft-build'],
++				'e2dac66',
+ 				process.versions['chrome'],
+ 				process.versions['node'],
+ 				process.versions['v8'],
