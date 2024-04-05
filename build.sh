@@ -48,6 +48,9 @@ cleanCode () {
 
 	rm -r -f ./.build/* &&
 	rm -r -f ./out* &&
+	rm -r -f ./node_modules &&
+	rm -r -f ./build/node_modules &&
+	rm -r -f ./remote/node_modules &&
 	printf "\n" &&
 	printf "${bold}${GRE} Done.${c0}\n" &&
 	printf "\n"

@@ -446,7 +446,7 @@ index a06baecbdeb..c943db2d3f1 100644
      "source-map": "0.6.1",
      "ternary-stream": "^3.0.0",
      "through2": "^4.0.2",
-@@ -57,6 +57,13 @@
+@@ -57,6 +57,14 @@
      "workerpool": "^6.4.0",
      "yauzl": "^2.10.0"
    },
@@ -455,6 +455,7 @@ index a06baecbdeb..c943db2d3f1 100644
 +    "@azure/core-client": "1.7.3",
 +    "@azure/core-lro": "2.5.4",
 +    "@azure/core-rest-pipeline": "1.12.2",
++    "@azure/core-tracing": "1.0.1",
 +    "@azure/core-util": "1.6.1"
 +  },
    "scripts": {
