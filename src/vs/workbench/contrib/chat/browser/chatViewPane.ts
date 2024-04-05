@@ -43,7 +43,7 @@ export class ChatViewPane extends ViewPane implements IChatViewPane {
 	private _widget!: ChatWidget;
 	get widget(): ChatWidget { return this._widget; }
 
-	private modelDisposables = this._register(new DisposableStore());
+	private readonly modelDisposables = this._register(new DisposableStore());
 	private memento: Memento;
 	private readonly viewState: IViewPaneState;
 	private didProviderRegistrationFail = false;
@@ -133,7 +133,7 @@ export class ChatViewPane extends ViewPane implements IChatViewPane {
 			super.renderBody(parent);
 
 			const scopedInstantiationService = this.instantiationService.createChild(new ServiceCollection([IContextKeyService, this.scopedContextKeyService]));
-
+			const locationBasedColors = this.getLocationBasedColors();
 			this._widget = this._register(scopedInstantiationService.createInstance(
 				ChatWidget,
 				ChatAgentLocation.Panel,
@@ -141,8 +141,8 @@ export class ChatViewPane extends ViewPane implements IChatViewPane {
 				{ supportsFileReferences: true },
 				{
 					listForeground: SIDE_BAR_FOREGROUND,
-					listBackground: this.getBackgroundColor(),
-					inputEditorBackground: this.getBackgroundColor(),
+					listBackground: locationBasedColors.background,
+					inputEditorBackground: locationBasedColors.background,
 					resultEditorBackground: editorBackground
 				}));
 			this._register(this.onDidChangeBodyVisibility(visible => {
