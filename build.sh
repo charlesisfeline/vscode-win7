@@ -21,8 +21,11 @@ displayHelp () {
 	printf "${bold}${GRE}Script to build Code - OSS for Linux or Windows.${c0}\n" &&
 	printf "${bold}${YEL}Use the --deps flag to install build dependencies.${c0}\n" &&
 	printf "${bold}${YEL}Use the --linux flag to build for Linux.${c0}\n" &&
+	printf "${bold}${YEL}Use the --dist-linux flag make a .deb installer.${c0}\n" &&
 	printf "${bold}${YEL}Use the --win flag to build for Windows.${c0}\n" &&
+	printf "${bold}${YEL}Use the --dist-win flag to make .exe installers.${c0}\n" &&
 	printf "${bold}${YEL}Use the --clean flag to remove all artifacts.\n" &&
+	printf "${bold}${YEL}Use the --patch to patch vscode without building.\n" &&
 	printf "${bold}${YEL}Use the --help flag to show this help.${c0}\n" &&
 	printf "\n"
 }
@@ -59,99 +62,113 @@ case $1 in
 	--clean) cleanCode; exit 0;;
 esac
 
-printf "\n" &&
-printf "${bold}${GRE}Script to build Code - OSS for Linux or Windows.${c0}\n" &&
-printf "${bold}${YEL}Use the --deps flag to install build dependencies.${c0}\n" &&
-printf "${bold}${YEL}Use the --linux flag to build for Linux.${c0}\n" &&
-printf "${bold}${YEL}Use the --win flag to build for Windows.${c0}\n" &&
-printf "${bold}${YEL}Use the --clean flag to remove all artifacts.\n" &&
-printf "${bold}${YEL}Use the --help flag to show this help.${c0}\n" &&
-printf "\n" &&
-tput sgr0 &&
+# Patch for Windows 7/8/8.1
+patchCode () {
+	printf "\n" &&
+	printf "${bold}${YEL} Patching VSCode for Windows 7/8/8.1...${c0}\n" &&
+	printf "\n" &&
+
+	# Patch for Electron 22/Node 16
+	git apply --reject ./patches/win7.patch &&
+
+	# Patch package.jsons to use Node 16
+	/usr/bin/find ./ \( -type d -name .git -prune -type d -name node_modules -prune \) -o -type f -name package.json -print0 | xargs -0 sed -i 's/\"\@types\/node\"\:\ \"18\.x\"/\"\@types\/node\"\:\ \"16\.x\"/g' &&
+
+	printf "\n" &&
+	printf "${bold}${GRE} Done.${c0}\n" &&
+	printf "\n"
+}
+case $1 in
+	--patch) patchCode; exit 0;;
+esac
 
 buildLinux () {
-export VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
-export CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-export CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-export CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-export LDFLAGS="-Wl,-O3 -msse3 -s" &&
+	# Don't complain about using Node 16
+	export VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
+	export CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	export CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	export CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	export LDFLAGS="-Wl,-O3 -msse3 -s" &&
 
-# Patch for Electron 22/Node 16
-git apply --reject ./patches/win7.patch &&
+	patchCode()
 
-# Patch package.jsons to use Node 16
-/usr/bin/find ./ \( -type d -name .git -prune -type d -name node_modules -prune \) -o -type f -name package.json -print0 | xargs -0 sed -i 's/\"\@types\/node\"\:\ \"18\.x\"/\"\@types\/node\"\:\ \"16\.x\"/g' &&
+	# Copy my icons over the source tree
+	# cp -r -v ./logos/resources/. ./resources/ &&
 
-# Copy my icons over the source tree
-# cp -r -v ./logos/resources/. ./resources/ &&
-
-yarn install &&
-yarn monaco-compile-check &&
-yarn valid-layers-check &&
-yarn gulp compile-build &&
-yarn gulp compile-extension-media &&
-yarn gulp compile-extensions-build &&
-yarn gulp minify-vscode &&
-yarn gulp vscode-linux-x64-min-ci
+	yarn install &&
+	yarn monaco-compile-check &&
+	yarn valid-layers-check &&
+	yarn gulp compile-build &&
+	yarn gulp compile-extension-media &&
+	yarn gulp compile-extensions-build &&
+	yarn gulp minify-vscode &&
+	yarn gulp vscode-linux-x64-min-ci
 }
 case $1 in
 	--linux) buildLinux; exit 0;;
 esac
 
 distLinux () {
-yarn gulp vscode-linux-x64-build-deb
+	yarn gulp vscode-linux-x64-build-deb
 }
 case $1 in
 	--dist-linux) buildLinux; distLinux; exit 0;;
 esac
 
 buildWin () {
-# Set msvs_version for node-gyp on Windows
-export MSVS_VERSION="2022" &&
-export GYP_MSVS_VERSION="2022" &&
-set MSVS_VERSION="2022" &&
-set GYP_MSVS_VERSION="2022" &&
-# Don't complain about using Node 16
-export VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
-export CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-export CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-export CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-export LDFLAGS="-Wl,-O3 -msse3 -s" &&
-set VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
-set CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-set CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-set CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
-set LDFLAGS="-Wl,-O3 -msse3 -s" &&
+	# Set msvs_version for node-gyp on Windows
+	export MSVS_VERSION="2022" &&
+	export GYP_MSVS_VERSION="2022" &&
+	set MSVS_VERSION="2022" &&
+	set GYP_MSVS_VERSION="2022" &&
+	# Don't complain about using Node 16
+	export VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
+	export CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	export CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	export CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	export LDFLAGS="-Wl,-O3 -msse3 -s" &&
+	set VSCODE_SKIP_NODE_VERSION_CHECK=1 &&
+	set CFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	set CXXFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	set CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
+	set LDFLAGS="-Wl,-O3 -msse3 -s" &&
 
-# Patch for Electron 22/Node 16
-git apply --reject ./patches/win7.patch &&
+	patchCode()
 
-# Patch package.jsons to use Node 16
-/usr/bin/find ./ \( -type d -name .git -prune -type d -name node_modules -prune \) -o -type f -name package.json -print0 | xargs -0 sed -i 's/\"\@types\/node\"\:\ \"18\.x\"/\"\@types\/node\"\:\ \"16\.x\"/g' &&
+	# Copy my icons over the source tree
+	# cp -r -v ./logos/resources/. ./resources/ &&
 
-# Copy my icons over the source tree
-# cp -r -v ./logos/resources/. ./resources/ &&
-
-yarn install &&
-yarn monaco-compile-check &&
-yarn valid-layers-check &&
-yarn gulp compile-build &&
-yarn gulp compile-extension-media &&
-yarn gulp compile-extensions-build &&
-yarn gulp minify-vscode &&
-yarn gulp vscode-win32-x64-min-ci
+	yarn install &&
+	yarn monaco-compile-check &&
+	yarn valid-layers-check &&
+	yarn gulp compile-build &&
+	yarn gulp compile-extension-media &&
+	yarn gulp compile-extensions-build &&
+	yarn gulp minify-vscode &&
+	yarn gulp vscode-win32-x64-min-ci
 }
 case $1 in
 	--win) buildWin; exit 0;;
 esac
 
 distWin () {
-yarn gulp vscode-win32-x64-inno-updater &&
-yarn gulp vscode-win32-x64-system-setup &&
-yarn gulp vscode-win32-x64-user-setup
+	yarn gulp vscode-win32-x64-inno-updater &&
+	yarn gulp vscode-win32-x64-system-setup &&
+	yarn gulp vscode-win32-x64-user-setup
 }
 case $1 in
 	--dist-win) buildWin; distWin; exit 0;;
 esac
 
+printf "\n" &&
+printf "${bold}${GRE}Script to build Code - OSS for Linux or Windows.${c0}\n" &&
+printf "${bold}${YEL}Use the --deps flag to install build dependencies.${c0}\n" &&
+printf "${bold}${YEL}Use the --linux flag to build for Linux.${c0}\n" &&
+printf "${bold}${YEL}Use the --dist-linux flag make a .deb installer.${c0}\n" &&
+printf "${bold}${YEL}Use the --win flag to build for Windows.${c0}\n" &&
+printf "${bold}${YEL}Use the --dist-win flag to make .exe installers.${c0}\n" &&
+printf "${bold}${YEL}Use the --clean flag to remove all artifacts.\n" &&
+printf "${bold}${YEL}Use the --patch to patch vscode without building.\n" &&
+printf "${bold}${YEL}Use the --help flag to show this help.${c0}\n" &&
+printf "\n" &&
 tput sgr0

@@ -19,12 +19,15 @@ try() { "$@" || die "${RED}Failed $*"; }
 displayHelp () {
 	printf "\n" &&
 	printf "${bold}${GRE}Script to clean vscode build artifacts.${c0}\n" &&
+	printf "${bold}${YEL}Use the --help flag to show this help.${c0}\n" &&
 	printf "\n"
 }
 case $1 in
 	--help) displayHelp; exit 0;;
 esac
 
+printf "\n" &&
+printf "${bold}${GRE}Script to clean build artifacts.${c0}\n" &&
 printf "\n" &&
 printf "${bold}${YEL} Cleaning assets, artifacts, and build directory...${c0}\n" &&
 printf "\n" &&
