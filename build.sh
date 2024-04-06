@@ -90,7 +90,7 @@ buildLinux () {
 	export CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 	export LDFLAGS="-Wl,-O3 -msse3 -s" &&
 
-	patchCode()
+	patchCode;
 
 	# Copy my icons over the source tree
 	# cp -r -v ./logos/resources/. ./resources/ &&
@@ -133,7 +133,7 @@ buildWin () {
 	set CPPFLAGS="-DNDEBUG -msse3 -O3 -g0 -s" &&
 	set LDFLAGS="-Wl,-O3 -msse3 -s" &&
 
-	patchCode()
+	patchCode;
 
 	# Copy my icons over the source tree
 	# cp -r -v ./logos/resources/. ./resources/ &&
