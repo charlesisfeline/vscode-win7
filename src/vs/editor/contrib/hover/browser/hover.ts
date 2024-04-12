@@ -12,7 +12,6 @@ import { ConfigurationChangedEvent, EditorOption } from 'vs/editor/common/config
 import { Range } from 'vs/editor/common/core/range';
 import { IEditorContribution, IScrollEvent } from 'vs/editor/common/editorCommon';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
-import { ILanguageService } from 'vs/editor/common/languages/language';
 import { GotoDefinitionAtPositionEditorContribution } from 'vs/editor/contrib/gotoSymbol/browser/link/goToDefinitionAtPosition';
 import { HoverStartMode, HoverStartSource } from 'vs/editor/contrib/hover/browser/hoverOperation';
 import { ContentHoverWidget, ContentHoverController } from 'vs/editor/contrib/hover/browser/contentHover';
@@ -20,7 +19,6 @@ import { MarginHoverWidget } from 'vs/editor/contrib/hover/browser/marginHover';
 import { AccessibilitySupport } from 'vs/platform/accessibility/common/accessibility';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { editorHoverBorder } from 'vs/platform/theme/common/colorRegistry';
 import { registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { HoverParticipantRegistry } from 'vs/editor/contrib/hover/browser/hoverTypes';
@@ -46,9 +44,12 @@ interface IHoverSettings {
 
 interface IHoverState {
 	mouseDown: boolean;
-	// TODO @aiday-mar maybe not needed, investigate this
-	contentHoverFocused: boolean;
 	activatedByDecoratorClick: boolean;
+}
+
+const enum HoverWidgetType {
+	Content,
+	Glyph,
 }
 
 export class HoverController extends Disposable implements IEditorContribution {
@@ -66,15 +67,12 @@ export class HoverController extends Disposable implements IEditorContribution {
 	private _hoverSettings!: IHoverSettings;
 	private _hoverState: IHoverState = {
 		mouseDown: false,
-		contentHoverFocused: false,
 		activatedByDecoratorClick: false
 	};
 
 	constructor(
 		private readonly _editor: ICodeEditor,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
-		@IOpenerService private readonly _openerService: IOpenerService,
-		@ILanguageService private readonly _languageService: ILanguageService,
 		@IKeybindingService private readonly _keybindingService: IKeybindingService
 	) {
 		super();
@@ -146,17 +144,12 @@ export class HoverController extends Disposable implements IEditorContribution {
 
 		if (target.type === MouseTargetType.CONTENT_WIDGET && target.detail === ContentHoverWidget.ID) {
 			// mouse down on top of content hover widget
-			this._hoverState.contentHoverFocused = true;
 			return;
 		}
 
 		if (target.type === MouseTargetType.OVERLAY_WIDGET && target.detail === MarginHoverWidget.ID) {
 			// mouse down on top of margin hover widget
 			return;
-		}
-
-		if (target.type !== MouseTargetType.OVERLAY_WIDGET) {
-			this._hoverState.contentHoverFocused = false;
 		}
 
 		if (this._contentWidget?.widget.isResizing) {
@@ -232,9 +225,6 @@ export class HoverController extends Disposable implements IEditorContribution {
 		if (this._contentWidget?.isFocused || this._contentWidget?.isResizing) {
 			return;
 		}
-		if (this._hoverState.mouseDown && this._hoverState.contentHoverFocused) {
-			return;
-		}
 		const sticky = this._hoverSettings.sticky;
 		if (sticky && this._contentWidget?.isVisibleFromKeyboard) {
 			// Sticky mode is on and the hover has been shown via keyboard
@@ -287,29 +277,30 @@ export class HoverController extends Disposable implements IEditorContribution {
 			return;
 		}
 
-		const contentWidget = this._getOrCreateContentWidget();
-
-		if (contentWidget.showsOrWillShow(mouseEvent)) {
-			this._glyphWidget?.hide();
+		const contentHoverShowsOrWillShow = this._tryShowHoverWidget(mouseEvent, HoverWidgetType.Content);
+		if (contentHoverShowsOrWillShow) {
 			return;
 		}
 
-		if (target.type === MouseTargetType.GUTTER_GLYPH_MARGIN && target.position && target.detail.glyphMarginLane) {
-			this._contentWidget?.hide();
-			const glyphWidget = this._getOrCreateGlyphWidget();
-			glyphWidget.startShowingAt(target.position.lineNumber, target.detail.glyphMarginLane);
-			return;
-		}
-		if (target.type === MouseTargetType.GUTTER_LINE_NUMBERS && target.position) {
-			this._contentWidget?.hide();
-			const glyphWidget = this._getOrCreateGlyphWidget();
-			glyphWidget.startShowingAt(target.position.lineNumber, 'lineNo');
+		const glyphWidgetShowsOrWillShow = this._tryShowHoverWidget(mouseEvent, HoverWidgetType.Glyph);
+		if (glyphWidgetShowsOrWillShow) {
 			return;
 		}
 		if (_sticky) {
 			return;
 		}
 		this._hideWidgets();
+	}
+
+	private _tryShowHoverWidget(mouseEvent: IEditorMouseEvent, hoverWidgetType: HoverWidgetType): boolean {
+		const isContentWidget = hoverWidgetType === HoverWidgetType.Content;
+		const currentWidget = isContentWidget ? this._getOrCreateContentWidget() : this._getOrCreateGlyphWidget();
+		const otherWidget = isContentWidget ? this._getOrCreateGlyphWidget() : this._getOrCreateContentWidget();
+		const showsOrWillShow = currentWidget.showsOrWillShow(mouseEvent);
+		if (showsOrWillShow) {
+			otherWidget.hide();
+		}
+		return showsOrWillShow;
 	}
 
 	private _onKeyDown(e: IKeyboardEvent): void {
@@ -348,18 +339,13 @@ export class HoverController extends Disposable implements IEditorContribution {
 		if (_sticky) {
 			return;
 		}
-		if (
-			(
-				this._hoverState.mouseDown
-				&& this._hoverState.contentHoverFocused
-				&& this._contentWidget?.isColorPickerVisible
-			)
-			|| InlineSuggestionHintsContentWidget.dropDownVisible
-		) {
+		if ((
+			this._hoverState.mouseDown
+			&& this._contentWidget?.isColorPickerVisible
+		) || InlineSuggestionHintsContentWidget.dropDownVisible) {
 			return;
 		}
 		this._hoverState.activatedByDecoratorClick = false;
-		this._hoverState.contentHoverFocused = false;
 		this._glyphWidget?.hide();
 		this._contentWidget?.hide();
 	}
@@ -373,7 +359,7 @@ export class HoverController extends Disposable implements IEditorContribution {
 
 	private _getOrCreateGlyphWidget(): MarginHoverWidget {
 		if (!this._glyphWidget) {
-			this._glyphWidget = new MarginHoverWidget(this._editor, this._languageService, this._openerService);
+			this._glyphWidget = this._instantiationService.createInstance(MarginHoverWidget, this._editor);
 		}
 		return this._glyphWidget;
 	}
