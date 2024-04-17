@@ -550,7 +550,7 @@ index 66c83e406be..b4817b9e1bf 100644
 +    "@types/sinon-test": "2.4.6",
      "@types/trusted-types": "^1.0.6",
      "@types/vscode-notebook-renderer": "^1.72.0",
-     "@types/webpack": "^5.28.1",
+     "@types/webpack": "^5.28.5",
 @@ -132,7 +132,7 @@
      "@typescript-eslint/eslint-plugin": "^6.21.0",
      "@typescript-eslint/experimental-utils": "^5.57.0",
@@ -640,7 +640,7 @@ diff --git a/src/vs/platform/windows/electron-main/windowImpl.ts b/src/vs/platfo
 index 4f2bb8182de..b708b4eba46 100644
 --- a/src/vs/platform/windows/electron-main/windowImpl.ts
 +++ b/src/vs/platform/windows/electron-main/windowImpl.ts
-@@ -333,11 +333,7 @@ export abstract class BaseWindow extends Disposable implements IBaseWindow {
+@@ -376,11 +376,7 @@ export abstract class BaseWindow extends Disposable implements IBaseWindow {
  		// macOS: traffic lights
  		else if (isMacintosh && options.height !== undefined) {
  			const verticalOffset = (options.height - 15) / 2; // 15px is the height of the traffic lights
