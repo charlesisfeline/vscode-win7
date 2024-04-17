@@ -1,12 +1,12 @@
 diff --git a/.nvmrc b/.nvmrc
-index 4a1f488b6c3..c85fa1bbef8 100644
+index a9d087399d7..c85fa1bbef8 100644
 --- a/.nvmrc
 +++ b/.nvmrc
 @@ -1 +1 @@
 -18.19.0
 +16.17.1
 diff --git a/.yarnrc b/.yarnrc
-index 1614ee06ded..a64784e03cf 100644
+index 616968bddff..304bdb0251f 100644
 --- a/.yarnrc
 +++ b/.yarnrc
 @@ -1,5 +1,5 @@
@@ -270,7 +270,7 @@ index 62d09498221..a84f4312b99 100644
  				return { fileName, body: undefined };
  			} else {
 diff --git a/build/lib/compilation.ts b/build/lib/compilation.ts
-index 228bca4e6a6..ebc9dedf2e5 100644
+index b88d0d29003..cf7fbdad943 100644
 --- a/build/lib/compilation.ts
 +++ b/build/lib/compilation.ts
 @@ -226,7 +226,7 @@ class MonacoGenerator {
@@ -390,7 +390,7 @@ index 68f6989f27a..0e89508fe8e 100644
  const product = require('../../product.json');
  const packageJson = require('../../package.json');
 diff --git a/build/linux/debian/calculate-deps.js b/build/linux/debian/calculate-deps.js
-index 6304df9edda..1ede0702f52 100644
+index bbcb6bfc3de..ff88c2512bc 100644
 --- a/build/linux/debian/calculate-deps.js
 +++ b/build/linux/debian/calculate-deps.js
 @@ -78,9 +78,12 @@ function calculatePackageDeps(binaryPath, arch, chromiumSysroot, vscodeSysroot)
@@ -426,7 +426,7 @@ index 92f8065f262..f964ccfbf41 100644
  	const requires = new Set(filteredDeps);
  	return requires;
 diff --git a/build/package.json b/build/package.json
-index a06baecbdeb..c943db2d3f1 100644
+index a92ae344d67..c7ac661e08b 100644
 --- a/build/package.json
 +++ b/build/package.json
 @@ -4,7 +4,7 @@
@@ -446,7 +446,7 @@ index a06baecbdeb..c943db2d3f1 100644
      "source-map": "0.6.1",
      "ternary-stream": "^3.0.0",
      "through2": "^4.0.2",
-@@ -57,6 +57,14 @@
+@@ -56,6 +57,14 @@
      "workerpool": "^6.4.0",
      "yauzl": "^2.10.0"
    },
@@ -462,7 +462,7 @@ index a06baecbdeb..c943db2d3f1 100644
      "compile": "../node_modules/.bin/tsc -p tsconfig.build.json",
      "watch": "../node_modules/.bin/tsc -p tsconfig.build.json --watch",
 diff --git a/build/win32/code.iss b/build/win32/code.iss
-index cca821e647d..d65d7098c61 100644
+index fca3d1e9d9b..84293ea37b8 100644
 --- a/build/win32/code.iss
 +++ b/build/win32/code.iss
 @@ -26,7 +26,7 @@ SetupIconFile={#RepoDir}\resources\win32\code.ico
@@ -475,7 +475,7 @@ index cca821e647d..d65d7098c61 100644
  AppVersion={#Version}
  VersionInfoVersion={#RawVersion}
 diff --git a/cgmanifest.json b/cgmanifest.json
-index 139424f2613..f08c5299976 100644
+index 891a0b0cb32..f08c5299976 100644
 --- a/cgmanifest.json
 +++ b/cgmanifest.json
 @@ -6,7 +6,7 @@
@@ -535,7 +535,7 @@ index 139424f2613..f08c5299976 100644
  		{
  			"component": {
 diff --git a/package.json b/package.json
-index 66c83e406be..b4817b9e1bf 100644
+index 9abaff22822..593e95703e0 100644
 --- a/package.json
 +++ b/package.json
 @@ -118,9 +118,9 @@
@@ -600,7 +600,7 @@ index 66c83e406be..b4817b9e1bf 100644
      "type": "git",
      "url": "https://github.com/microsoft/vscode.git"
 diff --git a/remote/.yarnrc b/remote/.yarnrc
-index 45af692342a..4f229378bd7 100644
+index 4e7208cdf69..0a96f8ae71d 100644
 --- a/remote/.yarnrc
 +++ b/remote/.yarnrc
 @@ -1,5 +1,5 @@
@@ -637,7 +637,7 @@ index f8c7a35e077..d54657e0147 100644
  	 * Array of texts for buttons. On Windows, an empty array will result in one button
  	 * labeled "OK".
 diff --git a/src/vs/platform/windows/electron-main/windowImpl.ts b/src/vs/platform/windows/electron-main/windowImpl.ts
-index 4f2bb8182de..b708b4eba46 100644
+index ee03669982c..6b6ac1e53db 100644
 --- a/src/vs/platform/windows/electron-main/windowImpl.ts
 +++ b/src/vs/platform/windows/electron-main/windowImpl.ts
 @@ -376,11 +376,7 @@ export abstract class BaseWindow extends Disposable implements IBaseWindow {
@@ -654,7 +654,7 @@ index 4f2bb8182de..b708b4eba46 100644
  	}
  
 diff --git a/src/vs/server/node/remoteExtensionHostAgentServer.ts b/src/vs/server/node/remoteExtensionHostAgentServer.ts
-index a90d28e82cf..18a1412cd10 100644
+index 84664bbb39a..8cc682ebf1b 100644
 --- a/src/vs/server/node/remoteExtensionHostAgentServer.ts
 +++ b/src/vs/server/node/remoteExtensionHostAgentServer.ts
 @@ -551,8 +551,7 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
