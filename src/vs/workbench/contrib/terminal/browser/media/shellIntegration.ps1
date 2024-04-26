@@ -52,7 +52,7 @@ if ($env:VSCODE_ENV_APPEND) {
 function Global:__VSCode-Escape-Value([string]$value) {
 	# NOTE: In PowerShell v6.1+, this can be written `$value -replace '…', { … }` instead of `[regex]::Replace`.
 	# Replace any non-alphanumeric characters.
-	[regex]::Replace($value, '[\\\n;]', { param($match)
+	[regex]::Replace($value, "[$([char]0x1b)\\\n;]", { param($match)
 			# Encode the (ascii) matches as `\x<hex>`
 			-Join (
 				[System.Text.Encoding]::UTF8.GetBytes($match.Value) | ForEach-Object { '\x{0:x2}' -f $_ }
@@ -135,6 +135,12 @@ else {
 	[Console]::Write("$([char]0x1b)]633;P;IsWindows=$IsWindows`a")
 }
 
+# Set ContinuationPrompt property
+$ContinuationPrompt = (Get-PSReadLineOption).ContinuationPrompt
+if ($ContinuationPrompt) {
+	[Console]::Write("$([char]0x1b)]633;P;ContinuationPrompt=$(__VSCode-Escape-Value $ContinuationPrompt)`a")
+}
+
 # Set always on key handlers which map to default VS Code keybindings
 function Set-MappedKeyHandler {
 	param ([string[]] $Chord, [string[]]$Sequence)
@@ -195,7 +201,7 @@ function Send-Completions {
 	$completionPrefix = $commandLine
 
 	# Get completions
-	$result = "`e]633;Completions"
+	$result = "$([char]0x1b)]633;Completions"
 	if ($completionPrefix.Length -gt 0) {
 		# Get and send completions
 		$completions = TabExpansion2 -inputScript $completionPrefix -cursorColumn $cursorIndex
