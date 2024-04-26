@@ -535,7 +535,7 @@ index 891a0b0cb32..f08c5299976 100644
  		{
  			"component": {
 diff --git a/package.json b/package.json
-index 9abaff22822..593e95703e0 100644
+index 1f5a34f8e87..2f319f3b49c 100644
 --- a/package.json
 +++ b/package.json
 @@ -118,9 +118,9 @@
@@ -636,6 +636,20 @@ index f8c7a35e077..d54657e0147 100644
  	/**
  	 * Array of texts for buttons. On Windows, an empty array will result in one button
  	 * labeled "OK".
+diff --git a/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css b/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css
+index 3baf48ce1af..ca2a2a68fbe 100644
+--- a/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css
++++ b/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css
+@@ -42,7 +42,8 @@ body {
+ }
+ 
+ .pid {
+-	width: 50px
++	width: 50px;
++	margin-right: 8px;
+ }
+ 
+ .memory {
 diff --git a/src/vs/platform/windows/electron-main/windowImpl.ts b/src/vs/platform/windows/electron-main/windowImpl.ts
 index ee03669982c..6b6ac1e53db 100644
 --- a/src/vs/platform/windows/electron-main/windowImpl.ts
@@ -667,6 +681,23 @@ index 84664bbb39a..8cc682ebf1b 100644
  				}, () => {
  					socket.removeListener('error', e);
  					socket.pause();
+diff --git a/src/vs/workbench/electron-sandbox/actions/windowActions.ts b/src/vs/workbench/electron-sandbox/actions/windowActions.ts
+index 5693f076eec..c1d97f330d0 100644
+--- a/src/vs/workbench/electron-sandbox/actions/windowActions.ts
++++ b/src/vs/workbench/electron-sandbox/actions/windowActions.ts
+@@ -43,9 +43,9 @@ export class CloseWindowAction extends Action2 {
+ 			f1: true,
+ 			keybinding: {
+ 				weight: KeybindingWeight.WorkbenchContrib,
+-				mac: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyW },
+-				linux: { primary: KeyMod.Alt | KeyCode.F4, secondary: [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyW] },
+-				win: { primary: KeyMod.Alt | KeyCode.F4, secondary: [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyW] }
++				mac: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyQ },
++				linux: { primary: KeyMod.Alt | KeyCode.F4, secondary: [KeyMod.CtrlCmd | KeyCode.KeyQ] },
++				win: { primary: KeyMod.Alt | KeyCode.F4, secondary: [KeyMod.CtrlCmd | KeyCode.KeyQ] }
+ 			},
+ 			menu: {
+ 				id: MenuId.MenubarFileMenu,
 diff --git a/src/vs/workbench/electron-sandbox/parts/dialogs/dialogHandler.ts b/src/vs/workbench/electron-sandbox/parts/dialogs/dialogHandler.ts
 index f2cc82ab8c5..d70413044be 100644
 --- a/src/vs/workbench/electron-sandbox/parts/dialogs/dialogHandler.ts
