@@ -39,7 +39,6 @@ import { compareFileNames, comparePaths } from 'vs/base/common/comparers';
 import { FuzzyScore, createMatches, IMatch } from 'vs/base/common/filters';
 import { IViewDescriptorService, ViewContainerLocation } from 'vs/workbench/common/views';
 import { localize } from 'vs/nls';
-import { flatten } from 'vs/base/common/arrays';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { EditorResourceAccessor, SideBySideEditor } from 'vs/workbench/common/editor';
 import { SIDE_BAR_BACKGROUND, PANEL_BACKGROUND } from 'vs/workbench/common/theme';
@@ -589,7 +588,7 @@ class RepositoryPaneActionRunner extends ActionRunner {
 		const selection = this.getSelectedResources();
 		const contextIsSelected = selection.some(s => s === context);
 		const actualContext = contextIsSelected ? selection : [context];
-		const args = flatten(actualContext.map(e => ResourceTree.isResourceNode(e) ? ResourceTree.collect(e) : [e]));
+		const args = actualContext.map(e => ResourceTree.isResourceNode(e) ? ResourceTree.collect(e) : [e]).flat();
 		await action.run(...args);
 	}
 }
@@ -3586,7 +3585,7 @@ class SCMTreeDataSource implements IAsyncDataSource<ISCMViewService, TreeElement
 					type: 'actionButton',
 					repository: inputOrElement,
 					button: actionButton
-				} as ISCMActionButton);
+				} satisfies ISCMActionButton);
 			}
 
 			// ResourceGroups
@@ -3614,7 +3613,7 @@ class SCMTreeDataSource implements IAsyncDataSource<ISCMViewService, TreeElement
 					ariaLabel = localize('syncOutgoingSeparatorHeaderAriaLabel', "Outgoing changes");
 				}
 
-				children.push({ label, ariaLabel, repository: inputOrElement, type: 'separator' } as SCMViewSeparatorElement);
+				children.push({ label, ariaLabel, repository: inputOrElement, type: 'separator' } satisfies SCMViewSeparatorElement);
 			}
 
 			children.push(...historyItemGroups);
