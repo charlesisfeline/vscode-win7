@@ -538,7 +538,7 @@ diff --git a/package.json b/package.json
 index 1f5a34f8e87..2f319f3b49c 100644
 --- a/package.json
 +++ b/package.json
-@@ -118,9 +118,9 @@
+@@ -117,9 +117,9 @@
      "@types/kerberos": "^1.1.2",
      "@types/minimist": "^1.2.1",
      "@types/mocha": "^9.1.1",
@@ -551,7 +551,7 @@ index 1f5a34f8e87..2f319f3b49c 100644
      "@types/trusted-types": "^1.0.6",
      "@types/vscode-notebook-renderer": "^1.72.0",
      "@types/webpack": "^5.28.5",
-@@ -132,7 +132,7 @@
+@@ -131,7 +131,7 @@
      "@typescript-eslint/eslint-plugin": "^6.21.0",
      "@typescript-eslint/experimental-utils": "^5.57.0",
      "@typescript-eslint/parser": "^6.21.0",
@@ -560,7 +560,7 @@ index 1f5a34f8e87..2f319f3b49c 100644
      "@vscode/l10n-dev": "0.0.30",
      "@vscode/telemetry-extractor": "^1.10.2",
      "@vscode/test-cli": "^0.0.6",
-@@ -149,7 +149,7 @@
+@@ -148,7 +148,7 @@
      "cssnano": "^6.0.3",
      "debounce": "^1.0.0",
      "deemon": "^1.8.0",
@@ -569,7 +569,7 @@ index 1f5a34f8e87..2f319f3b49c 100644
      "eslint": "8.36.0",
      "eslint-plugin-header": "3.1.1",
      "eslint-plugin-jsdoc": "^46.5.0",
-@@ -198,10 +198,10 @@
+@@ -197,10 +197,10 @@
      "postcss": "^8.4.33",
      "postcss-nesting": "^12.0.2",
      "pump": "^1.0.1",
@@ -583,7 +583,7 @@ index 1f5a34f8e87..2f319f3b49c 100644
      "source-map": "0.6.1",
      "source-map-support": "^0.3.2",
      "style-loader": "^3.3.2",
-@@ -218,6 +218,15 @@
+@@ -217,6 +217,15 @@
      "xml2js": "^0.5.0",
      "yaserver": "^0.4.0"
    },
@@ -654,7 +654,7 @@ diff --git a/src/vs/platform/windows/electron-main/windowImpl.ts b/src/vs/platfo
 index ee03669982c..6b6ac1e53db 100644
 --- a/src/vs/platform/windows/electron-main/windowImpl.ts
 +++ b/src/vs/platform/windows/electron-main/windowImpl.ts
-@@ -376,11 +376,7 @@ export abstract class BaseWindow extends Disposable implements IBaseWindow {
+@@ -378,11 +378,7 @@ export abstract class BaseWindow extends Disposable implements IBaseWindow {
  		// macOS: traffic lights
  		else if (isMacintosh && options.height !== undefined) {
  			const verticalOffset = (options.height - 15) / 2; // 15px is the height of the traffic lights
