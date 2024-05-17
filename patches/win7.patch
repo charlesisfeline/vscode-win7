@@ -599,7 +599,7 @@ index 6b0467b4a14..148b23f69e5 100644
      "source-map": "0.6.1",
      "source-map-support": "^0.3.2",
      "style-loader": "^3.3.2",
-@@ -217,6 +217,13 @@
+@@ -217,6 +217,14 @@
      "yaserver": "^0.4.0"
    },
    "resolutions": {
@@ -609,6 +609,7 @@ index 6b0467b4a14..148b23f69e5 100644
 +    "@azure/core-rest-pipeline": "1.12.2",
 +    "@azure/core-tracing": "1.0.1",
 +    "@azure/core-util": "1.6.1",
++    "@azure-rest/core-client": "1.1.4",
 +    "@types/sinon": "10.0.16",
      "node-gyp-build": "4.8.1"
    },
