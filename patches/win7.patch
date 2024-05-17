@@ -3,7 +3,7 @@ index a9d087399d7..c85fa1bbef8 100644
 --- a/.nvmrc
 +++ b/.nvmrc
 @@ -1 +1 @@
--18.19.0
+-20.12.1
 +16.17.1
 diff --git a/.yarnrc b/.yarnrc
 index 616968bddff..304bdb0251f 100644
@@ -11,9 +11,9 @@ index 616968bddff..304bdb0251f 100644
 +++ b/.yarnrc
 @@ -1,5 +1,5 @@
  disturl "https://electronjs.org/headers"
--target "28.2.8"
+-target "29.3.1"
 +target "22.3.27"
- ms_build_id "27744544"
+ ms_build_id "9464424"
  runtime "electron"
  build_from_source "true"
 diff --git a/build/checksums/electron.txt b/build/checksums/electron.txt
@@ -482,7 +482,7 @@ index 891a0b0cb32..f08c5299976 100644
  				"git": {
  					"name": "chromium",
  					"repositoryUrl": "https://chromium.googlesource.com/chromium/src",
--					"commitHash": "14d11e5bb9b5b1cd51f7b19546e74a73cab42084"
+-					"commitHash": "f1a45d7ded05d64ca8136cc142ddc0c271b1dd43"
 +					"commitHash": "513ac8b2c47c7e1ac6b9f4fb5ea98e965cf29b66"
  				}
  			},
@@ -491,7 +491,7 @@ index 891a0b0cb32..f08c5299976 100644
  				"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  			],
  			"isOnlyProductionDependency": true,
--			"version": "120.0.6099.291"
+-			"version": "122.0.6261.156"
 +			"version": "108.0.5359.215"
  		},
  		{
@@ -500,7 +500,7 @@ index 891a0b0cb32..f08c5299976 100644
  				"git": {
  					"name": "ffmpeg",
  					"repositoryUrl": "https://chromium.googlesource.com/chromium/third_party/ffmpeg",
--					"commitHash": "e1ca3f06adec15150a171bc38f550058b4bbb23b"
+-					"commitHash": "17525de887d54b970ffdd421a0879c1db1952307"
 +					"commitHash": "b9f01c3c54576330b2cf8918c54d5ee5be8faefe"
  				}
  			},
@@ -509,12 +509,12 @@ index 891a0b0cb32..f08c5299976 100644
  				"git": {
  					"name": "nodejs",
  					"repositoryUrl": "https://github.com/nodejs/node",
--					"commitHash": "8a01b3dcb7d08a48bfd3e6bf85ef49faa1454839"
+-					"commitHash": "22f383dcd529d6bf790856db614a35fea78e825f"
 +					"commitHash": "6b06e89c7dfccec6792008302af1cee57649445c"
  				}
  			},
  			"isOnlyProductionDependency": true,
--			"version": "18.18.2"
+-			"version": "20.9.0"
 +			"version": "16.17.1"
  		},
  		{
@@ -523,13 +523,13 @@ index 891a0b0cb32..f08c5299976 100644
  				"git": {
  					"name": "electron",
  					"repositoryUrl": "https://github.com/electron/electron",
--					"commitHash": "31cd9d1f61714e20f1067d726404600ab7281698"
+-					"commitHash": "384642792eb521b978a008ee1dbc30885edb7dcb"
 +					"commitHash": "e2dac668c680a8b58f204ce14ad88431a2db4339"
  				}
  			},
  			"isOnlyProductionDependency": true,
  			"license": "MIT",
--			"version": "28.2.8"
+-			"version": "29.3.1"
 +			"version": "22.3.27"
  		},
  		{
@@ -542,7 +542,7 @@ index 1f5a34f8e87..2f319f3b49c 100644
      "@types/kerberos": "^1.1.2",
      "@types/minimist": "^1.2.1",
      "@types/mocha": "^9.1.1",
--    "@types/node": "18.x",
+-    "@types/node": "20.x",
 -    "@types/sinon": "^10.0.2",
 -    "@types/sinon-test": "^2.4.2",
 +    "@types/node": "16.x",
@@ -557,14 +557,14 @@ index 1f5a34f8e87..2f319f3b49c 100644
      "@typescript-eslint/parser": "^6.21.0",
 -    "@vscode/gulp-electron": "^1.36.0",
 +    "@vscode/gulp-electron": "git+https://github.com/Alex313031/vscode-gulp-electron.git",
-     "@vscode/l10n-dev": "0.0.30",
+     "@vscode/l10n-dev": "0.0.35",
      "@vscode/telemetry-extractor": "^1.10.2",
      "@vscode/test-cli": "^0.0.6",
 @@ -148,7 +148,7 @@
      "cssnano": "^6.0.3",
      "debounce": "^1.0.0",
      "deemon": "^1.8.0",
--    "electron": "28.2.8",
+-    "electron": "29.3.1",
 +    "electron": "22.3.27",
      "eslint": "8.36.0",
      "eslint-plugin-header": "3.1.1",
@@ -605,9 +605,9 @@ index 4e7208cdf69..0a96f8ae71d 100644
 +++ b/remote/.yarnrc
 @@ -1,5 +1,5 @@
  disturl "https://nodejs.org/dist"
--target "18.18.2"
+-target "20.9.0"
 +target "16.17.1"
- ms_build_id "256117"
+ ms_build_id "267516"
  runtime "node"
  build_from_source "true"
 diff --git a/src/vs/base/node/shell.ts b/src/vs/base/node/shell.ts
