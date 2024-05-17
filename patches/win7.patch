@@ -1,12 +1,12 @@
 diff --git a/.nvmrc b/.nvmrc
-index a9d087399d7..c85fa1bbef8 100644
+index bc78e9f2695..c85fa1bbef8 100644
 --- a/.nvmrc
 +++ b/.nvmrc
 @@ -1 +1 @@
 -20.12.1
 +16.17.1
 diff --git a/.yarnrc b/.yarnrc
-index 616968bddff..304bdb0251f 100644
+index 31ceae81a48..47d44abde2c 100644
 --- a/.yarnrc
 +++ b/.yarnrc
 @@ -1,5 +1,5 @@
@@ -427,7 +427,7 @@ index 92f8065f262..f964ccfbf41 100644
  	const requires = new Set(filteredDeps);
  	return requires;
 diff --git a/build/package.json b/build/package.json
-index a92ae344d67..c7ac661e08b 100644
+index 2b89bbc1c99..a207051e37c 100644
 --- a/build/package.json
 +++ b/build/package.json
 @@ -4,7 +4,7 @@
@@ -476,7 +476,7 @@ index fca3d1e9d9b..84293ea37b8 100644
  AppVersion={#Version}
  VersionInfoVersion={#RawVersion}
 diff --git a/cgmanifest.json b/cgmanifest.json
-index 891a0b0cb32..f08c5299976 100644
+index a85c770cff2..f08c5299976 100644
 --- a/cgmanifest.json
 +++ b/cgmanifest.json
 @@ -6,7 +6,7 @@
@@ -599,7 +599,7 @@ index 6b0467b4a14..148b23f69e5 100644
    },
    "repository": {
 diff --git a/remote/.yarnrc b/remote/.yarnrc
-index 4e7208cdf69..0a96f8ae71d 100644
+index 60d35d09192..c7dcce182ae 100644
 --- a/remote/.yarnrc
 +++ b/remote/.yarnrc
 @@ -1,5 +1,5 @@
@@ -623,7 +623,7 @@ index f8c7a35e077..d54657e0147 100644
  	 * Array of texts for buttons. On Windows, an empty array will result in one button
  	 * labeled "OK".
 diff --git a/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css b/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css
-index 3baf48ce1af..ca2a2a68fbe 100644
+index 3baf48ce1af..2216a7f7f0a 100644
 --- a/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css
 +++ b/src/vs/code/electron-sandbox/processExplorer/media/processExplorer.css
 @@ -42,7 +42,8 @@ body {
@@ -637,7 +637,7 @@ index 3baf48ce1af..ca2a2a68fbe 100644
  
  .memory {
 diff --git a/src/vs/platform/windows/electron-main/windowImpl.ts b/src/vs/platform/windows/electron-main/windowImpl.ts
-index ee03669982c..6b6ac1e53db 100644
+index dcb3a1776ec..dc2074d82f9 100644
 --- a/src/vs/platform/windows/electron-main/windowImpl.ts
 +++ b/src/vs/platform/windows/electron-main/windowImpl.ts
 @@ -378,11 +378,7 @@ export abstract class BaseWindow extends Disposable implements IBaseWindow {
@@ -654,7 +654,7 @@ index ee03669982c..6b6ac1e53db 100644
  	}
  
 diff --git a/src/vs/server/node/remoteExtensionHostAgentServer.ts b/src/vs/server/node/remoteExtensionHostAgentServer.ts
-index 84664bbb39a..8cc682ebf1b 100644
+index 9eace08d06a..ed4898dd373 100644
 --- a/src/vs/server/node/remoteExtensionHostAgentServer.ts
 +++ b/src/vs/server/node/remoteExtensionHostAgentServer.ts
 @@ -551,8 +551,7 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
