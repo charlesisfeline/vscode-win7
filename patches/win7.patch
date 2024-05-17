@@ -609,19 +609,6 @@ index 4e7208cdf69..0a96f8ae71d 100644
  ms_build_id "267516"
  runtime "node"
  build_from_source "true"
-diff --git a/src/vs/base/node/shell.ts b/src/vs/base/node/shell.ts
-index 9da701ffec3..55d97ca3580 100644
---- a/src/vs/base/node/shell.ts
-+++ b/src/vs/base/node/shell.ts
-@@ -33,7 +33,7 @@ function getSystemShellUnixLike(os: platform.OperatingSystem, env: platform.IPro
- 	}
- 
- 	if (!_TERMINAL_DEFAULT_SHELL_UNIX_LIKE) {
--		let unixLikeTerminal: string | undefined;
-+		let unixLikeTerminal: string | undefined | null;
- 		if (platform.isWindows) {
- 			unixLikeTerminal = '/bin/bash'; // for WSL
- 		} else {
 diff --git a/src/vs/base/parts/sandbox/common/electronTypes.ts b/src/vs/base/parts/sandbox/common/electronTypes.ts
 index f8c7a35e077..d54657e0147 100644
 --- a/src/vs/base/parts/sandbox/common/electronTypes.ts
