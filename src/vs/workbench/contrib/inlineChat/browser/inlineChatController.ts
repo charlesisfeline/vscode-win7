@@ -82,7 +82,7 @@ export abstract class InlineChatRunOptions {
 	position?: IPosition;
 	withIntentDetection?: boolean;
 
-	static isInteractiveEditorOptions(options: any): options is InlineChatRunOptions {
+	static isInlineChatRunOptions(options: any): options is InlineChatRunOptions {
 		const { initialSelection, initialRange, message, autoSend, position, existingSession } = <InlineChatRunOptions>options;
 		if (
 			typeof message !== 'undefined' && typeof message !== 'string'
@@ -106,8 +106,6 @@ export class InlineChatController implements IEditorContribution {
 
 	private _isDisposed: boolean = false;
 	private readonly _store = new DisposableStore();
-	// private readonly _input: Lazy<InlineChatContentWidget>;
-	// private readonly _zone: Lazy<InlineChatZoneWidget>;
 
 	private readonly _ui: Lazy<{ content: InlineChatContentWidget; zone: InlineChatZoneWidget }>;
 
@@ -384,10 +382,6 @@ export class InlineChatController implements IEditorContribution {
 		this._ui.value.content.setSession(this._session);
 		// this._ui.value.zone.widget.updateSlashCommands(this._session.session.slashCommands ?? []);
 		this._updatePlaceholder();
-		const message = this._session.session.message ?? localize('welcome.1', "AI-generated code may be incorrect");
-
-
-		this._ui.value.zone.widget.updateInfo(message);
 
 		this._showWidget(!this._session.chatModel.hasRequests);
 
@@ -470,7 +464,7 @@ export class InlineChatController implements IEditorContribution {
 				if (position.lineNumber !== 1) {
 					return undefined;
 				}
-				if (!this._session || !this._session.session.slashCommands) {
+				if (!this._session || !this._session.agent.slashCommands) {
 					return undefined;
 				}
 				const widget = this._chatWidgetService.getWidgetByInputUri(model.uri);
@@ -479,7 +473,7 @@ export class InlineChatController implements IEditorContribution {
 				}
 
 				const result: CompletionList = { suggestions: [], incomplete: false };
-				for (const command of this._session.session.slashCommands) {
+				for (const command of this._session.agent.slashCommands) {
 					const withSlash = `/${command.name}`;
 					result.suggestions.push({
 						label: { label: withSlash, description: command.description ?? '' },
@@ -496,7 +490,7 @@ export class InlineChatController implements IEditorContribution {
 		const updateSlashDecorations = (collection: IEditorDecorationsCollection, model: ITextModel) => {
 
 			const newDecorations: IModelDeltaDecoration[] = [];
-			for (const command of (this._session?.session.slashCommands ?? []).sort((a, b) => b.name.length - a.name.length)) {
+			for (const command of (this._session?.agent.slashCommands ?? []).sort((a, b) => b.name.length - a.name.length)) {
 				const withSlash = `/${command.name}`;
 				const firstLine = model.getLineContent(1);
 				if (firstLine.startsWith(withSlash)) {
@@ -749,11 +743,9 @@ export class InlineChatController implements IEditorContribution {
 
 		store.dispose();
 
-		// todo@jrieken we can likely remove 'trackEdit'
 		const diff = await this._editorWorkerService.computeDiff(this._session.textModel0.uri, this._session.textModelN.uri, { computeMoves: false, maxComputationTimeMs: Number.MAX_SAFE_INTEGER, ignoreTrimWhitespace: false }, 'advanced');
 		this._session.wholeRange.fixup(diff?.changes ?? []);
-
-		await this._session.hunkData.recompute(editState);
+		await this._session.hunkData.recompute(editState, diff);
 
 		this._ui.value.zone.widget.updateToolbar(true);
 		this._ui.value.zone.widget.updateProgress(false);
@@ -902,13 +894,6 @@ export class InlineChatController implements IEditorContribution {
 		} else if (initialRender) {
 			const selection = this._editor.getSelection();
 			widgetPosition = selection.getStartPosition();
-			// TODO@jrieken we are not ready for this
-			// widgetPosition = selection.getEndPosition();
-			// if (Range.spansMultipleLines(selection) && widgetPosition.column === 1) {
-			// 	// selection ends on "nothing" -> move up to match the
-			// 	// rendered/visible part of the selection
-			// 	widgetPosition = this._editor.getModel().validatePosition(widgetPosition.delta(-1, Number.MAX_SAFE_INTEGER));
-			// }
 			this._ui.value.content.show(widgetPosition);
 
 		} else {
@@ -962,7 +947,6 @@ export class InlineChatController implements IEditorContribution {
 		};
 
 		this._inlineChatSavingService.markChanged(this._session);
-		this._session.wholeRange.trackEdits(editOperations);
 		if (opts) {
 			await this._strategy.makeProgressiveChanges(editOperations, editsObserver, opts, undoStopBefore);
 		} else {
@@ -977,7 +961,7 @@ export class InlineChatController implements IEditorContribution {
 	}
 
 	private _getPlaceholderText(): string {
-		return this._forcedPlaceholder ?? this._session?.session.placeholder ?? '';
+		return this._forcedPlaceholder ?? this._session?.agent.description ?? '';
 	}
 
 	// ---- controller API
