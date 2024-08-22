@@ -52,7 +52,7 @@ import { ViewContext } from 'vs/workbench/contrib/notebook/browser/viewModel/vie
 import { NotebookCellTextModel } from 'vs/workbench/contrib/notebook/common/model/notebookCellTextModel';
 import { NotebookTextModel } from 'vs/workbench/contrib/notebook/common/model/notebookTextModel';
 import { INotebookCellStatusBarService } from 'vs/workbench/contrib/notebook/common/notebookCellStatusBarService';
-import { CellKind, CellUri, ICellDto2, INotebookDiffEditorModel, INotebookEditorModel, INotebookSearchOptions, IOutputDto, IResolvedNotebookEditorModel, NotebookCellExecutionState, NotebookCellMetadata, SelectionStateType } from 'vs/workbench/contrib/notebook/common/notebookCommon';
+import { CellKind, CellUri, ICellDto2, INotebookDiffEditorModel, INotebookEditorModel, INotebookFindOptions, IOutputDto, IResolvedNotebookEditorModel, NotebookCellExecutionState, NotebookCellMetadata, SelectionStateType } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 import { ICellExecuteUpdate, ICellExecutionComplete, ICellExecutionStateChangedEvent, IExecutionStateChangedEvent, INotebookCellExecution, INotebookExecution, INotebookExecutionStateService, INotebookFailStateChangedEvent } from 'vs/workbench/contrib/notebook/common/notebookExecutionStateService';
 import { NotebookOptions } from 'vs/workbench/contrib/notebook/browser/notebookOptions';
 import { ICellRange } from 'vs/workbench/contrib/notebook/common/notebookRange';
@@ -178,7 +178,7 @@ export class NotebookEditorTestModel extends EditorModel implements INotebookEdi
 	}
 }
 
-export function setupInstantiationService(disposables: DisposableStore) {
+export function setupInstantiationService(disposables: Pick<DisposableStore, 'add'>) {
 	const instantiationService = disposables.add(new TestInstantiationService());
 	const testThemeService = new TestThemeService();
 	instantiationService.stub(ILanguageService, disposables.add(new LanguageService()));
@@ -217,7 +217,7 @@ export function setupInstantiationService(disposables: DisposableStore) {
 function _createTestNotebookEditor(instantiationService: TestInstantiationService, disposables: DisposableStore, cells: MockNotebookCell[]): { editor: IActiveNotebookEditorDelegate; viewModel: NotebookViewModel } {
 
 	const viewType = 'notebook';
-	const notebook = disposables.add(instantiationService.createInstance(NotebookTextModel, viewType, URI.parse('test'), cells.map((cell): ICellDto2 => {
+	const notebook = disposables.add(instantiationService.createInstance(NotebookTextModel, viewType, URI.parse('test://test'), cells.map((cell): ICellDto2 => {
 		return {
 			source: cell[0],
 			mime: undefined,
@@ -296,6 +296,7 @@ function _createTestNotebookEditor(instantiationService: TestInstantiationServic
 		override setCellEditorSelection() { }
 		override async revealRangeInCenterIfOutsideViewportAsync() { }
 		override async layoutNotebookCell() { }
+		override async createOutput() { }
 		override async removeInset() { }
 		override async focusNotebookCell(cell: ICellViewModel, focusItem: 'editor' | 'container' | 'output') {
 			cell.focusMode = focusItem === 'editor' ? CellFocusMode.Editor
@@ -311,7 +312,7 @@ function _createTestNotebookEditor(instantiationService: TestInstantiationServic
 		override get onDidChangeSelection() { return viewModel.onDidChangeSelection as Event<any>; }
 		override get onDidChangeOptions() { return viewModel.onDidChangeOptions; }
 		override get onDidChangeViewCells() { return viewModel.onDidChangeViewCells; }
-		override async find(query: string, options: INotebookSearchOptions): Promise<CellFindMatchWithIndex[]> {
+		override async find(query: string, options: INotebookFindOptions): Promise<CellFindMatchWithIndex[]> {
 			const findMatches = viewModel.find(query, options).filter(match => match.length > 0);
 			return findMatches;
 		}
@@ -377,11 +378,17 @@ export async function withTestNotebookDiffModel<R = any>(originalCells: [source:
 		override get notebook() {
 			return originalNotebook.viewModel.notebookDocument;
 		}
+		override get resource() {
+			return originalNotebook.viewModel.notebookDocument.uri;
+		}
 	};
 
 	const modifiedResource = new class extends mock<IResolvedNotebookEditorModel>() {
 		override get notebook() {
 			return modifiedNotebook.viewModel.notebookDocument;
+		}
+		override get resource() {
+			return modifiedNotebook.viewModel.notebookDocument.uri;
 		}
 	};
 
@@ -398,15 +405,19 @@ export async function withTestNotebookDiffModel<R = any>(originalCells: [source:
 	if (res instanceof Promise) {
 		res.finally(() => {
 			originalNotebook.editor.dispose();
+			originalNotebook.viewModel.notebookDocument.dispose();
 			originalNotebook.viewModel.dispose();
 			modifiedNotebook.editor.dispose();
+			modifiedNotebook.viewModel.notebookDocument.dispose();
 			modifiedNotebook.viewModel.dispose();
 			disposables.dispose();
 		});
 	} else {
 		originalNotebook.editor.dispose();
+		originalNotebook.viewModel.notebookDocument.dispose();
 		originalNotebook.viewModel.dispose();
 		modifiedNotebook.editor.dispose();
+		modifiedNotebook.viewModel.notebookDocument.dispose();
 		modifiedNotebook.viewModel.dispose();
 		disposables.dispose();
 	}

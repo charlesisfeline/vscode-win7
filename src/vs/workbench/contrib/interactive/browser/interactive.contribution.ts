@@ -26,7 +26,7 @@ import { Action2, MenuId, registerAction2 } from 'vs/platform/actions/common/act
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from 'vs/platform/configuration/common/configurationRegistry';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { EditorActivation, IResourceEditorInput } from 'vs/platform/editor/common/editor';
+import { EditorActivation, ITextResourceEditorInput } from 'vs/platform/editor/common/editor';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
@@ -51,12 +51,9 @@ import { NotebookEditorWidget } from 'vs/workbench/contrib/notebook/browser/note
 import * as icons from 'vs/workbench/contrib/notebook/browser/notebookIcons';
 import { INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/services/notebookEditorService';
 import { CellEditType, CellKind, CellUri, INTERACTIVE_WINDOW_EDITOR_ID, NotebookSetting, NotebookWorkingCopyTypeIdentifier } from 'vs/workbench/contrib/notebook/common/notebookCommon';
-import { InteractiveWindowOpen, NOTEBOOK_CELL_LIST_FOCUSED, REPL_NOTEBOOK_IS_ACTIVE_EDITOR } from 'vs/workbench/contrib/notebook/common/notebookContextKeys';
+import { InteractiveWindowOpen } from 'vs/workbench/contrib/notebook/common/notebookContextKeys';
 import { INotebookKernelService } from 'vs/workbench/contrib/notebook/common/notebookKernelService';
 import { INotebookService } from 'vs/workbench/contrib/notebook/common/notebookService';
-import { executeReplInput } from 'vs/workbench/contrib/replNotebook/browser/repl.contribution';
-import { ReplEditor } from 'vs/workbench/contrib/replNotebook/browser/replEditor';
-import { ReplEditorInput } from 'vs/workbench/contrib/replNotebook/browser/replEditorInput';
 import { columnToEditorGroup } from 'vs/workbench/services/editor/common/editorGroupColumn';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorResolverService, RegisteredEditorPriority } from 'vs/workbench/services/editor/common/editorResolverService';
@@ -98,7 +95,7 @@ export class InteractiveDocumentContribution extends Disposable implements IWork
 				providerDisplayName: 'Interactive Notebook',
 				displayName: 'Interactive',
 				filenamePattern: ['*.interactive'],
-				priority: RegisteredEditorPriority.exclusive
+				priority: RegisteredEditorPriority.builtin
 			}));
 		}
 
@@ -137,17 +134,25 @@ export class InteractiveDocumentContribution extends Disposable implements IWork
 			{
 				createEditorInput: ({ resource, options }) => {
 					const data = CellUri.parse(resource);
-					let cellOptions: IResourceEditorInput | undefined;
-					let IwResource = resource;
+					let cellOptions: ITextResourceEditorInput | undefined;
+					let iwResource = resource;
 
 					if (data) {
 						cellOptions = { resource, options };
-						IwResource = data.notebook;
+						iwResource = data.notebook;
 					}
 
-					const notebookOptions = { ...options, cellOptions } as INotebookEditorOptions;
+					const notebookOptions: INotebookEditorOptions | undefined = {
+						...options,
+						cellOptions,
+						cellRevealType: undefined,
+						cellSelections: undefined,
+						isReadOnly: undefined,
+						viewState: undefined,
+						indexedCellOptions: undefined
+					};
 
-					const editorInput = createEditor(IwResource, this.instantiationService);
+					const editorInput = createEditor(iwResource, this.instantiationService);
 					return {
 						editor: editorInput,
 						options: notebookOptions
@@ -158,13 +163,21 @@ export class InteractiveDocumentContribution extends Disposable implements IWork
 						throw new Error('Interactive window editors must have a resource name');
 					}
 					const data = CellUri.parse(resource);
-					let cellOptions: IResourceEditorInput | undefined;
+					let cellOptions: ITextResourceEditorInput | undefined;
 
 					if (data) {
 						cellOptions = { resource, options };
 					}
 
-					const notebookOptions = { ...options, cellOptions } as INotebookEditorOptions;
+					const notebookOptions: INotebookEditorOptions = {
+						...options,
+						cellOptions,
+						cellRevealType: undefined,
+						cellSelections: undefined,
+						isReadOnly: undefined,
+						viewState: undefined,
+						indexedCellOptions: undefined
+					};
 
 					const editorInput = createEditor(resource, this.instantiationService);
 					return {
@@ -438,6 +451,11 @@ registerAction2(class extends Action2 {
 			title: localize2('interactive.execute', 'Execute Code'),
 			category: interactiveWindowCategory,
 			keybinding: [{
+				// when: NOTEBOOK_CELL_LIST_FOCUSED,
+				when: ContextKeyExpr.equals('activeEditor', 'workbench.editor.interactive'),
+				primary: KeyMod.CtrlCmd | KeyCode.Enter,
+				weight: NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT
+			}, {
 				when: ContextKeyExpr.and(
 					ContextKeyExpr.equals('activeEditor', 'workbench.editor.interactive'),
 					ContextKeyExpr.equals('config.interactiveWindow.executeWithShiftEnter', true)
@@ -451,29 +469,11 @@ registerAction2(class extends Action2 {
 				),
 				primary: KeyCode.Enter,
 				weight: NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT
-			}, {
-				// when: NOTEBOOK_CELL_LIST_FOCUSED,
-				when: ContextKeyExpr.equals('activeEditor', 'workbench.editor.interactive'),
-				primary: KeyMod.WinCtrl | KeyCode.Enter,
-				win: {
-					primary: KeyMod.CtrlCmd | KeyCode.Enter
-				},
-				weight: NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT
-			}, {
-				when: ContextKeyExpr.and(
-					REPL_NOTEBOOK_IS_ACTIVE_EDITOR,
-					NOTEBOOK_CELL_LIST_FOCUSED.toNegated()
-				),
-				primary: KeyMod.CtrlCmd | KeyCode.Enter,
-				weight: NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT
 			}],
 			menu: [
 				{
 					id: MenuId.InteractiveInputExecute
 				},
-				{
-					id: MenuId.ReplInputExecute
-				}
 			],
 			icon: icons.executeIcon,
 			f1: false,
@@ -496,28 +496,21 @@ registerAction2(class extends Action2 {
 		const historyService = accessor.get(IInteractiveHistoryService);
 		const notebookEditorService = accessor.get(INotebookEditorService);
 		let editorControl: { notebookEditor: NotebookEditorWidget | undefined; codeEditor: CodeEditorWidget } | undefined;
-		let isReplEditor = false;
 		if (context) {
 			const resourceUri = URI.revive(context);
 			const editors = editorService.findEditors(resourceUri);
 			for (const found of editors) {
-				if (found.editor.typeId === ReplEditorInput.ID || found.editor.typeId === InteractiveEditorInput.ID) {
+				if (found.editor.typeId === InteractiveEditorInput.ID) {
 					const editor = await editorService.openEditor(found.editor, found.groupId);
 					editorControl = editor?.getControl() as { notebookEditor: NotebookEditorWidget | undefined; codeEditor: CodeEditorWidget } | undefined;
-					isReplEditor = found.editor.typeId === ReplEditorInput.ID;
 					break;
 				}
 			}
 		}
 		else {
-			const editor = editorService.activeEditorPane;
-			isReplEditor = editor instanceof ReplEditor;
 			editorControl = editorService.activeEditorPane?.getControl() as { notebookEditor: NotebookEditorWidget | undefined; codeEditor: CodeEditorWidget } | undefined;
 		}
 
-		if (editorControl && isReplEditor) {
-			executeReplInput(accessor, editorControl);
-		}
 
 		if (editorControl && editorControl.notebookEditor && editorControl.codeEditor) {
 			const notebookDocument = editorControl.notebookEditor.textModel;
@@ -533,6 +526,7 @@ registerAction2(class extends Action2 {
 					return;
 				}
 
+				historyService.replaceLast(notebookDocument.uri, value);
 				historyService.addToHistory(notebookDocument.uri, '');
 				textModel.setValue('');
 
@@ -638,6 +632,8 @@ registerAction2(class extends Action2 {
 		const historyService = accessor.get(IInteractiveHistoryService);
 		const editorControl = editorService.activeEditorPane?.getControl() as { notebookEditor: NotebookEditorWidget | undefined; codeEditor: CodeEditorWidget } | undefined;
 
+
+
 		if (editorControl && editorControl.notebookEditor && editorControl.codeEditor) {
 			const notebookDocument = editorControl.notebookEditor.textModel;
 			const textModel = editorControl.codeEditor.getModel();
@@ -691,9 +687,9 @@ registerAction2(class extends Action2 {
 			const textModel = editorControl.codeEditor.getModel();
 
 			if (notebookDocument && textModel) {
-				const previousValue = historyService.getNextValue(notebookDocument.uri);
-				if (previousValue) {
-					textModel.setValue(previousValue);
+				const nextValue = historyService.getNextValue(notebookDocument.uri);
+				if (nextValue !== null) {
+					textModel.setValue(nextValue);
 				}
 			}
 		}
@@ -853,10 +849,17 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).regis
 			default: false,
 			markdownDescription: localize('interactiveWindow.promptToSaveOnClose', "Prompt to save the interactive window when it is closed. Only new interactive windows will be affected by this setting change.")
 		},
-		['interactiveWindow.executeWithShiftEnter']: {
+		[InteractiveWindowSetting.executeWithShiftEnter]: {
 			type: 'boolean',
 			default: false,
-			markdownDescription: localize('interactiveWindow.executeWithShiftEnter', "Execute the interactive window (REPL) input box with shift+enter, so that enter can be used to create a newline.")
+			markdownDescription: localize('interactiveWindow.executeWithShiftEnter', "Execute the Interactive Window (REPL) input box with shift+enter, so that enter can be used to create a newline."),
+			tags: ['replExecute']
+		},
+		[InteractiveWindowSetting.showExecutionHint]: {
+			type: 'boolean',
+			default: true,
+			markdownDescription: localize('interactiveWindow.showExecutionHint', "Display a hint in the Interactive Window (REPL) input box to indicate how to execute code."),
+			tags: ['replExecute']
 		}
 	}
 });

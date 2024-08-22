@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DataTransfers, IDragAndDropData } from 'vs/base/browser/dnd';
-import { $, addDisposableListener, animate, Dimension, getContentHeight, getContentWidth, getTopLeftOffset, getWindow, isAncestor, isHTMLElement, scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
+import { $, addDisposableListener, animate, Dimension, getContentHeight, getContentWidth, getTopLeftOffset, getWindow, isAncestor, isHTMLElement, isSVGElement, scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { DomEmitter } from 'vs/base/browser/event';
 import { IMouseWheelEvent } from 'vs/base/browser/mouseEvent';
 import { EventType as TouchEventType, Gesture, GestureEvent } from 'vs/base/browser/touch';
@@ -519,7 +519,7 @@ export class ListView<T> implements IListView<T> {
 
 		if (typeof size === 'undefined') {
 			if (!this.supportDynamicHeights) {
-				console.warn('Dynamic heights not supported');
+				console.warn('Dynamic heights not supported', new Error().stack);
 				return;
 			}
 
@@ -1382,9 +1382,9 @@ export class ListView<T> implements IListView<T> {
 
 	private getItemIndexFromEventTarget(target: EventTarget | null): number | undefined {
 		const scrollableElement = this.scrollableElement.getDomNode();
-		let element: HTMLElement | null = target as (HTMLElement | null);
+		let element: HTMLElement | SVGElement | null = target as (HTMLElement | SVGElement | null);
 
-		while (isHTMLElement(element) && element !== this.rowsContainer && scrollableElement.contains(element)) {
+		while ((isHTMLElement(element) || isSVGElement(element)) && element !== this.rowsContainer && scrollableElement.contains(element)) {
 			const rawIndex = element.getAttribute('data-index');
 
 			if (rawIndex) {
@@ -1519,7 +1519,7 @@ export class ListView<T> implements IListView<T> {
 			item.row.domNode.style.height = '';
 			item.size = item.row.domNode.offsetHeight;
 			if (item.size === 0 && !isAncestor(item.row.domNode, getWindow(item.row.domNode).document.body)) {
-				console.warn('Measuring item node that is not in DOM! Add ListView to the DOM before measuring row height!');
+				console.warn('Measuring item node that is not in DOM! Add ListView to the DOM before measuring row height!', new Error().stack);
 			}
 			item.lastDynamicHeightWidth = this.renderWidth;
 			return item.size - size;

@@ -3,13 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { WindowIntervalTimer } from 'vs/base/browser/dom';
+import { getTotalWidth, WindowIntervalTimer } from 'vs/base/browser/dom';
 import { coalesceInPlace } from 'vs/base/common/arrays';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { Emitter, Event } from 'vs/base/common/event';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { themeColorFromId } from 'vs/base/common/themables';
-import { ICodeEditor, IViewZone, IViewZoneChangeAccessor } from 'vs/editor/browser/editorBrowser';
+import { ICodeEditor, IOverlayWidget, IOverlayWidgetPosition, IViewZone, IViewZoneChangeAccessor } from 'vs/editor/browser/editorBrowser';
 import { StableEditorScrollState } from 'vs/editor/browser/stableEditorScroll';
 import { LineSource, RenderOptions, renderLines } from 'vs/editor/browser/widget/diffEditor/components/diffEditorViewZones/renderLines';
 import { ISingleEditOperation } from 'vs/editor/common/core/editOperation';
@@ -26,10 +26,9 @@ import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/c
 import { Progress } from 'vs/platform/progress/common/progress';
 import { SaveReason } from 'vs/workbench/common/editor';
 import { countWords } from 'vs/workbench/contrib/chat/common/chatWordCounter';
-import { HunkInformation, ReplyResponse, Session } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSession';
+import { HunkInformation, Session, HunkState } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSession';
 import { InlineChatZoneWidget } from './inlineChatZoneWidget';
-import { CTX_INLINE_CHAT_CHANGE_HAS_DIFF, CTX_INLINE_CHAT_CHANGE_SHOWS_DIFF, CTX_INLINE_CHAT_DOCUMENT_CHANGED, InlineChatConfigKeys, minimapInlineChatDiffInserted, overviewRulerInlineChatDiffInserted } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
-import { HunkState } from './inlineChatSession';
+import { CTX_INLINE_CHAT_CHANGE_HAS_DIFF, CTX_INLINE_CHAT_CHANGE_SHOWS_DIFF, CTX_INLINE_CHAT_DOCUMENT_CHANGED, InlineChatConfigKeys, MENU_INLINE_CHAT_ZONE, minimapInlineChatDiffInserted, overviewRulerInlineChatDiffInserted } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
 import { assertType } from 'vs/base/common/types';
 import { IModelService } from 'vs/editor/common/services/model';
 import { performAsyncTextEdit, asProgressiveEdit } from './utils';
@@ -41,6 +40,9 @@ import { Schemas } from 'vs/base/common/network';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { DefaultChatTextEditor } from 'vs/workbench/contrib/chat/browser/codeBlockPart';
 import { isEqual } from 'vs/base/common/resources';
+import { generateUuid } from 'vs/base/common/uuid';
+import { MenuWorkbenchButtonBar } from 'vs/platform/actions/browser/buttonbar';
+import { EditorOption } from 'vs/editor/common/config/editorOptions';
 
 export interface IEditObserver {
 	start(): void;
@@ -53,7 +55,6 @@ export abstract class EditModeStrategy {
 		description: 'inline-chat',
 		showIfCollapsed: false,
 		isWholeLine: true,
-		className: 'inline-chat-block-selection',
 	});
 
 	protected readonly _store = new DisposableStore();
@@ -71,7 +72,7 @@ export abstract class EditModeStrategy {
 		protected readonly _editor: ICodeEditor,
 		protected readonly _zone: InlineChatZoneWidget,
 		@ITextFileService private readonly _textFileService: ITextFileService,
-		@IInstantiationService private readonly _instaService: IInstantiationService,
+		@IInstantiationService protected readonly _instaService: IInstantiationService,
 	) { }
 
 	dispose(): void {
@@ -136,7 +137,7 @@ export abstract class EditModeStrategy {
 
 	abstract makeChanges(edits: ISingleEditOperation[], obs: IEditObserver, undoStopBefore: boolean): Promise<void>;
 
-	abstract renderChanges(response: ReplyResponse): Promise<Position | undefined>;
+	abstract renderChanges(): Promise<Position | undefined>;
 
 	move?(next: boolean): void;
 
@@ -190,7 +191,7 @@ export class PreviewStrategy extends EditModeStrategy {
 	override async makeProgressiveChanges(): Promise<void> {
 	}
 
-	override async renderChanges(response: ReplyResponse): Promise<undefined> { }
+	override async renderChanges(): Promise<undefined> { }
 
 	hasFocus(): boolean {
 		return this._zone.widget.hasFocus();
@@ -259,6 +260,7 @@ export class LiveStrategy extends EditModeStrategy {
 		session: Session,
 		editor: ICodeEditor,
 		zone: InlineChatZoneWidget,
+		private readonly _showOverlayToolbar: boolean,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IEditorWorkerService protected readonly _editorWorkerService: IEditorWorkerService,
 		@IAccessibilityService private readonly _accessibilityService: IAccessibilityService,
@@ -364,7 +366,7 @@ export class LiveStrategy extends EditModeStrategy {
 
 	private readonly _hunkDisplayData = new Map<HunkInformation, HunkDisplayData>();
 
-	override async renderChanges(response: ReplyResponse) {
+	override async renderChanges() {
 
 		this._progressiveEditingDecorations.clear();
 
@@ -431,14 +433,20 @@ export class LiveStrategy extends EditModeStrategy {
 									const [hunkRange] = hunkData.getRangesN();
 									viewZoneData.afterLineNumber = hunkRange.startLineNumber - 1;
 									data.viewZoneId = viewZoneAccessor.addZone(viewZoneData);
+									overlay?.updateExtraTop(result.heightInLines);
 								} else {
 									viewZoneAccessor.removeZone(data.viewZoneId!);
+									overlay?.updateExtraTop(0);
 									data.viewZoneId = undefined;
 								}
 							});
 							this._ctxCurrentChangeShowsDiff.set(typeof data?.viewZoneId === 'string');
 							scrollState.restore(this._editor);
 						};
+
+						const overlay = this._showOverlayToolbar
+							? this._instaService.createInstance(InlineChangeOverlay, this._editor, hunkData)
+							: undefined;
 
 						const remove = () => {
 							changeDecorationsAndViewZones(this._editor, (decorationsAccessor, viewZoneAccessor) => {
@@ -452,6 +460,8 @@ export class LiveStrategy extends EditModeStrategy {
 								data.decorationIds = [];
 								data.viewZoneId = undefined;
 							});
+
+							overlay?.dispose();
 						};
 
 						const move = (next: boolean) => {
@@ -481,7 +491,7 @@ export class LiveStrategy extends EditModeStrategy {
 							}
 						};
 
-						const zoneLineNumber = this._zone.position!.lineNumber;
+						const zoneLineNumber = this._zone.position?.lineNumber ?? this._editor.getPosition()!.lineNumber;
 						const myDistance = zoneLineNumber <= hunkRanges[0].startLineNumber
 							? hunkRanges[0].startLineNumber - zoneLineNumber
 							: zoneLineNumber - hunkRanges[0].endLineNumber;
@@ -507,7 +517,7 @@ export class LiveStrategy extends EditModeStrategy {
 
 					} else {
 						// update distance and position based on modifiedRange-decoration
-						const zoneLineNumber = this._zone.position!.lineNumber;
+						const zoneLineNumber = this._zone.position?.lineNumber ?? this._editor.getPosition()!.lineNumber;
 						const modifiedRangeNow = hunkRanges[0];
 						data.position = modifiedRangeNow.getStartPosition().delta(-1);
 						data.distance = zoneLineNumber <= modifiedRangeNow.startLineNumber
@@ -531,7 +541,6 @@ export class LiveStrategy extends EditModeStrategy {
 
 			if (widgetData) {
 				this._zone.updatePositionAndHeight(widgetData.position);
-				this._editor.revealPositionInCenterIfOutsideViewport(widgetData.position);
 
 				const remainingHunks = this._session.hunkData.pending;
 				this._updateSummaryMessage(remainingHunks, this._session.hunkData.size);
@@ -578,7 +587,7 @@ export class LiveStrategy extends EditModeStrategy {
 			message = localize('change.0', "Nothing changed.");
 		} else if (remaining === 1) {
 			message = needsReview
-				? localize('review.1', "$(info) Accept or discard 1 change")
+				? localize('review.1', "$(info) Accept or Discard change")
 				: localize('change.1', "1 change");
 		} else {
 			message = needsReview
@@ -610,4 +619,76 @@ function changeDecorationsAndViewZones(editor: ICodeEditor, callback: (accessor:
 			callback(decorationsAccessor, viewZoneAccessor);
 		});
 	});
+}
+
+
+class InlineChangeOverlay implements IOverlayWidget {
+
+	readonly allowEditorOverflow: boolean = true;
+
+	private readonly _id: string = `inline-chat-diff-overlay-` + generateUuid();
+	private readonly _domNode: HTMLElement = document.createElement('div');
+	private readonly _store: DisposableStore = new DisposableStore();
+
+	private _extraTopLines: number = 0;
+
+	constructor(
+		private readonly _editor: ICodeEditor,
+		private readonly _hunkInfo: HunkInformation,
+		@IInstantiationService private readonly _instaService: IInstantiationService,
+	) {
+
+		this._domNode.classList.add('inline-chat-diff-overlay');
+
+		if (_hunkInfo.getState() === HunkState.Pending) {
+
+			this._store.add(this._instaService.createInstance(MenuWorkbenchButtonBar, this._domNode, MENU_INLINE_CHAT_ZONE, {
+				telemetrySource: 'inlineChat-changesZone',
+				buttonConfigProvider: (_action, idx) => {
+					return {
+						isSecondary: idx > 0,
+						showIcon: true,
+						showLabel: false
+					};
+				}
+			}));
+		}
+
+		this._editor.addOverlayWidget(this);
+		this._store.add(Event.any(this._editor.onDidLayoutChange, this._editor.onDidScrollChange)(() => this._editor.layoutOverlayWidget(this)));
+		queueMicrotask(() => this._editor.layoutOverlayWidget(this)); // FUNKY but needed to get the initial layout right
+	}
+
+	dispose(): void {
+		this._editor.removeOverlayWidget(this);
+		this._store.dispose();
+	}
+
+	getId(): string {
+		return this._id;
+	}
+
+	getDomNode(): HTMLElement {
+		return this._domNode;
+	}
+
+	getPosition(): IOverlayWidgetPosition | null {
+
+		const line = this._hunkInfo.getRangesN()[0].startLineNumber;
+		const info = this._editor.getLayoutInfo();
+		const top = this._editor.getTopForLineNumber(line) - this._editor.getScrollTop();
+		const left = info.contentLeft + info.contentWidth - info.verticalScrollbarWidth;
+
+		const extraTop = this._editor.getOption(EditorOption.lineHeight) * this._extraTopLines;
+		const width = getTotalWidth(this._domNode);
+
+		return { preference: { top: top - extraTop, left: left - width } };
+	}
+
+	updateExtraTop(value: number) {
+		if (this._extraTopLines !== value) {
+			this._extraTopLines = value;
+			this._editor.layoutOverlayWidget(this);
+		}
+	}
 }

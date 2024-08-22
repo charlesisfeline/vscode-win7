@@ -83,7 +83,11 @@ export class DebugHoverWidget implements IContentWidget {
 	// editor.IContentWidget.allowEditorOverflow
 	readonly allowEditorOverflow = true;
 
-	private _isVisible: boolean;
+	// todo@connor4312: move more properties that are only valid while a hover
+	// is happening into `_isVisible`
+	private _isVisible?: {
+		store: lifecycle.DisposableStore;
+	};
 	private safeTriangle?: dom.SafeTriangle;
 	private showCancellationSource?: CancellationTokenSource;
 	private domNode!: HTMLElement;
@@ -117,7 +121,6 @@ export class DebugHoverWidget implements IContentWidget {
 	) {
 		this.toDispose = [];
 
-		this._isVisible = false;
 		this.showAtPosition = null;
 		this.positionPreference = [ContentWidgetPositionPreference.ABOVE, ContentWidgetPositionPreference.BELOW];
 		this.debugHoverComputer = this.instantiationService.createInstance(DebugHoverComputer, this.editor);
@@ -215,7 +218,7 @@ export class DebugHoverWidget implements IContentWidget {
 	}
 
 	isVisible(): boolean {
-		return this._isVisible;
+		return !!this._isVisible;
 	}
 
 	willBeVisible(): boolean {
@@ -239,7 +242,7 @@ export class DebugHoverWidget implements IContentWidget {
 	}
 
 	async showAt(position: Position, focus: boolean, mouseEvent?: IMouseEvent): Promise<void | ShowDebugHoverResult> {
-		this.showCancellationSource?.cancel();
+		this.showCancellationSource?.dispose(true);
 		const cancellationSource = this.showCancellationSource = new CancellationTokenSource();
 		const session = this.debugService.getViewModel().focusedSession;
 
@@ -293,14 +296,16 @@ export class DebugHoverWidget implements IContentWidget {
 		}
 
 		this.showAtPosition = position;
-		this._isVisible = true;
+		const store = new lifecycle.DisposableStore();
+		this._isVisible = { store };
 
 		if (!expression.hasChildren) {
 			this.complexValueContainer.hidden = true;
 			this.valueContainer.hidden = false;
-			renderExpressionValue(expression, this.valueContainer, {
+			renderExpressionValue(store, expression, this.valueContainer, {
 				showChanged: false,
-				colorize: true
+				colorize: true,
+				hover: false,
 			}, this.hoverService);
 			this.valueContainer.title = '';
 			this.editor.layoutContentWidget(this);
@@ -381,7 +386,7 @@ export class DebugHoverWidget implements IContentWidget {
 
 	hide(): void {
 		if (this.showCancellationSource) {
-			this.showCancellationSource.cancel();
+			this.showCancellationSource.dispose(true);
 			this.showCancellationSource = undefined;
 		}
 
@@ -392,7 +397,9 @@ export class DebugHoverWidget implements IContentWidget {
 		if (dom.isAncestorOfActiveElement(this.domNode)) {
 			this.editor.focus();
 		}
-		this._isVisible = false;
+		this._isVisible.store.dispose();
+		this._isVisible = undefined;
+
 		this.highlightDecorations.clear();
 		this.editor.layoutContentWidget(this);
 		this.positionPreference = [ContentWidgetPositionPreference.ABOVE, ContentWidgetPositionPreference.BELOW];
@@ -451,8 +458,10 @@ interface IDebugHoverComputeResult {
 }
 
 class DebugHoverComputer {
-	private _currentRange: Range | undefined;
-	private _currentExpression: string | undefined;
+	private _current?: {
+		range: Range;
+		expression: string;
+	};
 
 	constructor(
 		private editor: ICodeEditor,
@@ -474,30 +483,35 @@ class DebugHoverComputer {
 		}
 
 		const { range, matchingExpression } = result;
-		const rangeChanged = this._currentRange ?
-			!this._currentRange.equalsRange(range) :
-			true;
-		this._currentExpression = matchingExpression;
-		this._currentRange = Range.lift(range);
-		return { rangeChanged, range: this._currentRange };
+		const rangeChanged = !this._current?.range.equalsRange(range);
+		this._current = { expression: matchingExpression, range: Range.lift(range) };
+		return { rangeChanged, range: this._current.range };
 	}
 
 	async evaluate(session: IDebugSession): Promise<IExpression | undefined> {
-		if (!this._currentExpression) {
+		if (!this._current) {
 			this.logService.error('No expression to evaluate');
 			return;
 		}
 
+		const textModel = this.editor.getModel();
+		const debugSource = textModel && session.getSourceForUri(textModel?.uri);
+
 		if (session.capabilities.supportsEvaluateForHovers) {
-			const expression = new Expression(this._currentExpression);
-			await expression.evaluate(session, this.debugService.getViewModel().focusedStackFrame, 'hover');
+			const expression = new Expression(this._current.expression);
+			await expression.evaluate(session, this.debugService.getViewModel().focusedStackFrame, 'hover', undefined, debugSource ? {
+				line: this._current.range.startLineNumber,
+				column: this._current.range.startColumn,
+				source: debugSource.raw,
+			} : undefined);
 			return expression;
 		} else {
 			const focusedStackFrame = this.debugService.getViewModel().focusedStackFrame;
 			if (focusedStackFrame) {
 				return await findExpressionInStackFrame(
 					focusedStackFrame,
-					coalesce(this._currentExpression.split('.').map(word => word.trim())));
+					coalesce(this._current.expression.split('.').map(word => word.trim()))
+				);
 			}
 		}
 
